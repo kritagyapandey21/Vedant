@@ -1,0 +1,29 @@
+[Unit]
+Description=TradingSignal Quotex backend
+After=network.target
+
+[Service]
+Type=simple
+User=tsignal
+Group=tsignal
+WorkingDirectory=/opt/tradingsignal/backend/quotex
+EnvironmentFile=/opt/tradingsignal/backend/quotex/.env
+Environment=TRADER_DB_PATH=/var/lib/tradingsignal/qx_trader_preferences.sqlite3
+Environment=ALLOWED_ORIGINS=https://__DOMAIN__
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/tradingsignal/browsers
+ExecStart=/opt/tradingsignal/venv/bin/uvicorn app:app --host 127.0.0.1 --port __QX_PORT__ --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=always
+RestartSec=10
+
+# stay inside our own folders and keep a lid on resources so the other sites on this VPS are not affected
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/tradingsignal/backend/quotex /opt/tradingsignal/backend/quotex_lib /var/lib/tradingsignal
+MemoryMax=900M
+CPUQuota=60%
+TasksMax=300
+
+[Install]
+WantedBy=multi-user.target

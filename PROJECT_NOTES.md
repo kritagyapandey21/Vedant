@@ -12,7 +12,7 @@ Saved at the end of the working session (24 Oct 2026). Everything is stopped; no
 | `backend/quotex/` | Quotex backend (FastAPI, port 8002) built on `quotex_lib/` |
 | `backend/quotex_lib/` | Quotex client library, collector, backtest, and the shared virtualenv `venv/` that runs everything |
 | `backend/gateway/` | `dev_gateway.py`, local stand-in for Nginx (port 8080) |
-| `backend/deploy/` | Nginx and systemd examples for the VPS (their paths are server paths, not local ones) |
+| `backend/deploy/` | Nginx file and two systemd services for the VPS (isolated, safe next to other sites) |
 | `backend/docs/` | older guides (INSTALLATION, HOSTINGER_VPS, TECHNICAL ...) written before this layout; folder names in them are outdated |
 | `backups/` | zip backup, the old Pocket Option frontend, old run scripts, and the Pocket Option git history (`AUROX-git-history`, use `git --git-dir=backups/AUROX-git-history log`) |
 | `start_all.bat` | starts all services (`start_all.bat noquotex` skips the Quotex backend) |
@@ -38,7 +38,7 @@ Ports: Pocket Option backend 8000, Quotex backend 8002, site gateway 8080.
 ## Still to do before real deployment
 - Rotate the Telegram session that was in git history of `backend/pocketoption/.env.example` (the file itself is cleaned).
 - Set `SESSION_SECRET`, `ADMIN_KEY`, `ACCESS_IDS` (Quotex logins), `ANTHROPIC_API_KEY` in the backend `.env` files on the server.
-- Pocket Option needs a real `LO_UID` token in `AUROX/backend/.env`; until then it shows the Binance crypto fallback.
-- Put the Quotex backend behind its own systemd service on port 8002 and use `LANDING/deploy/nginx-tradingsignal.conf`.
-- Replace the plain broker sign up links in `LANDING/login/login.js` with your referral links if you have them.
+- Pocket Option needs a real `LO_UID` token in `backend/pocketoption/.env`; until then it shows the Binance crypto fallback.
+- Deploy on the VPS by following `backend/docs/DEPLOY_VPS.md` (subdomain + isolated user + own Nginx file; does not touch the other sites).
+- Replace the plain broker sign up links in `frontend/landing/login/login.js` with your referral links if you have them.
 - Move the project out of the OneDrive folder if edits keep reverting (it happened once during the session).

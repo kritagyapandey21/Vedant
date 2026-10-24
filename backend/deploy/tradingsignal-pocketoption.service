@@ -1,0 +1,28 @@
+[Unit]
+Description=TradingSignal Pocket Option backend
+After=network.target
+
+[Service]
+Type=simple
+User=tsignal
+Group=tsignal
+WorkingDirectory=/opt/tradingsignal/backend/pocketoption
+EnvironmentFile=/opt/tradingsignal/backend/pocketoption/.env
+Environment=TRADER_DB_PATH=/var/lib/tradingsignal/po_trader_preferences.sqlite3
+Environment=ALLOWED_ORIGINS=https://__DOMAIN__
+ExecStart=/opt/tradingsignal/venv/bin/uvicorn app:app --host 127.0.0.1 --port __PO_PORT__ --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=always
+RestartSec=5
+
+# stay inside our own folders and keep a lid on resources so the other sites on this VPS are not affected
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/tradingsignal/backend/pocketoption /var/lib/tradingsignal
+MemoryMax=500M
+CPUQuota=50%
+TasksMax=200
+
+[Install]
+WantedBy=multi-user.target

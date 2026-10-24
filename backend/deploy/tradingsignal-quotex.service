@@ -11,7 +11,8 @@ EnvironmentFile=/opt/tradingsignal/backend/quotex/.env
 Environment=TRADER_DB_PATH=/var/lib/tradingsignal/qx_trader_preferences.sqlite3
 Environment=ALLOWED_ORIGINS=https://__DOMAIN__
 Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/tradingsignal/browsers
-ExecStart=/opt/tradingsignal/venv/bin/uvicorn app:app --host 127.0.0.1 --port __QX_PORT__ --proxy-headers --forwarded-allow-ips=127.0.0.1
+# xvfb-run gives the login browser a virtual screen (the server has none); needs: apt install xvfb xauth
+ExecStart=/usr/bin/xvfb-run -a --server-args="-screen 0 1280x800x24 -nolisten tcp" /opt/tradingsignal/venv/bin/uvicorn app:app --host 127.0.0.1 --port __QX_PORT__ --proxy-headers --forwarded-allow-ips=127.0.0.1
 Restart=always
 RestartSec=10
 
@@ -21,7 +22,7 @@ PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true
 ReadWritePaths=/opt/tradingsignal/backend/quotex /opt/tradingsignal/backend/quotex_lib /var/lib/tradingsignal
-MemoryMax=900M
+MemoryMax=1300M
 CPUQuota=60%
 TasksMax=300
 

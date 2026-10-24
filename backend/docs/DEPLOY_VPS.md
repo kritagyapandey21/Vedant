@@ -82,6 +82,7 @@ Quotex signs in through a headless browser. Install it for the `tsignal` user on
 ```bash
 sudo -u tsignal PLAYWRIGHT_BROWSERS_PATH=/opt/tradingsignal/browsers /opt/tradingsignal/venv/bin/playwright install chromium
 /opt/tradingsignal/venv/bin/playwright install-deps chromium     # adds system libraries (apt packages); safe, additive
+apt install -y xvfb xauth       # virtual screen: the Quotex login opens a real (non-headless) browser
 ```
 
 ## 5. Secrets (`.env` files, never committed)

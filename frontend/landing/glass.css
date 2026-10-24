@@ -116,3 +116,57 @@ html, body { background: #000; }
     .aurox-main, .aurox-claude { padding: 28px 24px; }
     .aurox-main h3 { font-size: 36px; }
 }
+
+/* ═════════ Phone ═════════ */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+a, button, summary { touch-action: manipulation; }
+.table-wrap { -webkit-overflow-scrolling: touch; }
+@media (max-width: 980px) {
+    :root { --glass-blur: blur(10px) saturate(1.3); }     /* lighter glass: cheaper on phone GPUs */
+    .section { padding-top: 80px; }
+    .section-head { margin-bottom: 36px; }
+}
+@media (max-width: 560px) {
+    .nav { padding-top: max(12px, env(safe-area-inset-top)); padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+    .nav-cta { min-height: 40px; }
+    .hero, .section, .cta { padding-inline: 16px; }
+    .hero { padding-top: 28px; padding-bottom: 64px; gap: 36px; }
+    .hero h1 { font-size: clamp(32px, 9.4vw, 44px); margin: 16px 0 18px; }
+    .lead { font-size: 16px; }
+    .hero-actions { margin: 24px 0 32px; }
+    .btn { min-height: 48px; }
+    .nav-cta.btn { min-height: 40px; }
+    .ticket { padding: 20px 16px; border-radius: 20px; }
+    .t-row h3 { font-size: 22px; }
+    .call { padding: 8px 14px; } .call b { font-size: 24px; }
+    .spark { height: 110px; margin: 14px 0 10px; }
+    .t-grid b { font-size: 15px; }
+    .section { padding-top: 56px; padding-bottom: 20px; }
+    .section-head h2 { margin: 12px 0 10px; }
+    .section-head .muted { font-size: 15.5px; }
+    .engine { padding: 24px 20px; } .engine h3 { font-size: 30px; }
+    .aurox-main, .aurox-claude { padding: 24px 18px; }
+    .aurox-main h3 { font-size: 32px; } .aurox-claude h4 { font-size: 19px; }
+    .mech-head { margin: 44px 0 20px; } .mech-head h3 { font-size: 22px; }
+    .steps li { padding: 20px 18px; } .steps h4 { font-size: 17px; }
+    .tile, .sec-card { padding: 20px; }
+    .compare { font-size: 13.5px; } .compare th, .compare td { padding: 12px 16px; }
+    .faq details { padding: 0 16px; } .faq summary { padding: 16px 0; min-height: 48px; font-size: 15px; }
+    .cta { margin: 40px 16px 56px; padding: 44px 18px; border-radius: 20px; }
+    .footer { padding: 36px 16px max(28px, env(safe-area-inset-bottom)); }
+    .foot-links { flex-wrap: wrap; gap: 12px 20px; }
+}
+@media (max-width: 700px) {            /* comparison table: one card per row instead of sideways scrolling */
+    .table-wrap { overflow: visible; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; display: grid; gap: 12px; }
+    .compare { min-width: 0; display: block; }
+    .compare thead { display: none; }
+    .compare tbody { display: grid; gap: 12px; }
+    .compare tr { display: block; padding: 14px 16px; border-radius: 16px; background: var(--glass); border: 1px solid var(--glass-edge); }
+    .compare tbody tr:hover { background: var(--glass); }
+    .compare tbody th, .compare td { display: block; width: auto; padding: 0; border: 0; text-align: left; }
+    .compare tbody th { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 8px; }
+    .compare td[data-label] { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; text-align: right; color: var(--text); }
+    .compare td[data-label]::before { content: attr(data-label); flex: none; color: var(--muted); font-size: 12.5px; text-align: left; }
+    .compare .span { background: none; color: var(--text); }
+}
+@media (max-width: 360px) { .facts b { font-size: 20px; } .logo { font-size: 16px; } }

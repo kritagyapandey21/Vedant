@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>TradingSignal: One minute signals for Quotex and Pocket Option</title>
     <meta name="description" content="TradingSignal scans open pairs on Pocket Option and Quotex and gives one clear next candle call, powered by AUROX AI, with a terminal for each broker.">
     <meta name="theme-color" content="#000000">
@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=9">
-    <link rel="stylesheet" href="glass.css?v=7">
+    <link rel="stylesheet" href="glass.css?v=10">
 </head>
 <body>
 <div class="progress" id="progress" aria-hidden="true"></div>
@@ -233,13 +233,13 @@
         <table class="compare">
             <thead><tr><th></th><th class="a">AUROX AI · Pocket Option</th><th class="b">AUROX AI · Quotex</th></tr></thead>
             <tbody>
-                <tr><th>Broker data</th><td>Pocket Option</td><td>Quotex</td></tr>
-                <tr><th>Pairs scanned</th><td>Forex, payout 80%+</td><td>Currency pairs incl. OTC, payout 80%+</td></tr>
-                <tr><th>Latest candles</th><td>Broker candle history</td><td>Live ticks merged over history</td></tr>
+                <tr><th>Broker data</th><td data-label="Pocket Option">Pocket Option</td><td data-label="Quotex">Quotex</td></tr>
+                <tr><th>Pairs scanned</th><td data-label="Pocket Option">Forex, payout 80%+</td><td data-label="Quotex">Currency pairs incl. OTC, payout 80%+</td></tr>
+                <tr><th>Latest candles</th><td data-label="Pocket Option">Broker candle history</td><td data-label="Quotex">Live ticks merged over history</td></tr>
                 <tr><th>Indicators</th><td colspan="2" class="span">RSI · EMA 9/21 · MACD, majority vote and weighted confidence</td></tr>
                 <tr><th>Candle size</th><td colspan="2" class="span">1 minute, entry at next full minute</td></tr>
-                <tr><th>Interface</th><td>Dark neon terminal</td><td>Light signal desk with call history</td></tr>
-                <tr><th>Access</th><td>Verified Trader ID</td><td>Access ID</td></tr>
+                <tr><th>Interface</th><td data-label="Pocket Option">Dark neon terminal</td><td data-label="Quotex">Light signal desk with call history</td></tr>
+                <tr><th>Access</th><td data-label="Pocket Option">Verified Trader ID</td><td data-label="Quotex">Access ID</td></tr>
             </tbody>
         </table>
     </div>

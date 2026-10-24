@@ -108,7 +108,8 @@ ANTHROPIC_API_KEY=<optional, enables the Claude review>
 SESSION_SECRET=<a different random value>
 ADMIN_KEY=<random value>
 LO_UID=<Pocket Option session token>         # without it the backend falls back to Binance crypto data
-REQUIRE_VERIFICATION=true                     # plus the TELEGRAM_* values if you use Telegram verification
+ACCESS_IDS=comma,separated,trader,ids        # who may log in. Empty with REQUIRE_VERIFICATION=false means ANYONE can
+REQUIRE_VERIFICATION=false                    # true only if you also set the TELEGRAM_* values (Telegram bot check)
 ANTHROPIC_API_KEY=<optional>
 ```
 

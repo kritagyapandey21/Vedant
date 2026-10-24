@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TradingSignal: One minute signals for Quotex and Pocket Option</title>
+    <meta name="description" content="TradingSignal scans open pairs on Pocket Option and Quotex and gives one clear next candle call, powered by AUROX AI, with a terminal for each broker.">
+    <meta name="theme-color" content="#000000">
+    <link rel="icon" type="image/svg+xml" href="mark.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=9">
+    <link rel="stylesheet" href="glass.css?v=7">
+</head>
+<body>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="bg" aria-hidden="true">
+    <div class="bg-grid" id="bgGrid"></div>
+    <div class="glow glow-1" data-speed="0.18"></div>
+    <div class="glow glow-2" data-speed="-0.12"></div>
+    <div class="glow glow-3" data-speed="0.08"></div>
+</div>
+
+<header class="nav" id="nav">
+    <a class="logo" href="#top" aria-label="TradingSignal home">
+        <img src="mark.svg" alt="" width="38" height="38">
+        <span>Trading<b>Signal</b></span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+        <a href="#engines">AUROX AI</a>
+        <a href="#features">Features</a>
+        <a href="#security">Security</a>
+        <a href="#compare">Compare</a>
+        <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-blue nav-cta" href="login/">Access Terminal</a>
+</header>
+
+<main id="top">
+<!-- ───────────── Hero ───────────── -->
+<section class="hero">
+    <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="hero-copy">
+        <p class="eyebrow reveal">LIVE 1 MINUTE SIGNAL DESK</p>
+        <h1 class="reveal" style="--d:.08s">One clear call<br>for the <span class="grad">next candle.</span></h1>
+        <p class="lead reveal" style="--d:.16s">TradingSignal scans every open, high payout pair on <b>Pocket Option</b> and <b>Quotex</b>, ranks the setups, and hands you a single BUY or SELL with exact entry and expiry times, in your own time zone.</p>
+        <div class="hero-actions reveal" style="--d:.24s">
+            <a class="btn btn-blue" href="login/">Access Terminal <span aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" href="#engines">See how it works</a>
+        </div>
+        <ul class="facts reveal" style="--d:.32s">
+            <li><b><span data-count="2">2</span></b><span>broker terminals</span></li>
+            <li><b><span data-count="1">1</span> min</b><span>candle, one call</span></li>
+            <li><b><span data-count="3">3</span></b><span>indicators vote</span></li>
+            <li><b><span data-count="0">0</span></b><span>trades placed for you</span></li>
+        </ul>
+    </div>
+
+    <div class="hero-visual reveal" style="--d:.2s" aria-label="Sample signal ticket">
+        <div class="ticket" id="sampleTicket">
+            <div class="ticket-tag">SAMPLE · NOT A LIVE SIGNAL</div>
+            <div class="t-row">
+                <div><span class="chip">1M · FOREX</span><h3>EUR/USD</h3></div>
+                <div class="call"><b>BUY</b><span>price expected up</span></div>
+            </div>
+            <svg class="spark" viewBox="0 0 400 130" preserveAspectRatio="none" aria-hidden="true"><line class="cgrid" x1="0" y1="37.0" x2="400" y2="37.0"/><line class="cgrid" x1="0" y1="64.0" x2="400" y2="64.0"/><line class="cgrid" x1="0" y1="91.0" x2="400" y2="91.0"/><line class="clast" x1="0" y1="15.0" x2="400" y2="15.0"/><g class="candle up" style="--i:0"><line x1="11.0" y1="93.6" x2="11.0" y2="115.8"/><rect x="6.9" y="101.2" width="8.1" height="3.2" rx="1"/></g><g class="candle up" style="--i:1"><line x1="25.0" y1="90.6" x2="25.0" y2="109.2"/><rect x="20.9" y="97.7" width="8.1" height="3.5" rx="1"/></g><g class="candle dn" style="--i:2"><line x1="39.0" y1="90.6" x2="39.0" y2="110.1"/><rect x="34.9" y="97.7" width="8.1" height="4.0" rx="1"/></g><g class="candle up" style="--i:3"><line x1="53.0" y1="86.6" x2="53.0" y2="106.7"/><rect x="48.9" y="89.4" width="8.1" height="12.3" rx="1"/></g><g class="candle dn" style="--i:4"><line x1="67.0" y1="79.2" x2="67.0" y2="104.9"/><rect x="62.9" y="89.4" width="8.1" height="6.5" rx="1"/></g><g class="candle dn" style="--i:5"><line x1="81.0" y1="83.9" x2="81.0" y2="115.5"/><rect x="76.9" y="95.9" width="8.1" height="7.8" rx="1"/></g><g class="candle up" style="--i:6"><line x1="95.0" y1="86.9" x2="95.0" y2="107.2"/><rect x="90.9" y="95.1" width="8.1" height="8.6" rx="1"/></g><g class="candle dn" style="--i:7"><line x1="109.0" y1="87.8" x2="109.0" y2="106.1"/><rect x="104.9" y="95.1" width="8.1" height="8.5" rx="1"/></g><g class="candle dn" style="--i:8"><line x1="123.0" y1="99.2" x2="123.0" y2="109.6"/><rect x="118.9" y="103.6" width="8.1" height="3.8" rx="1"/></g><g class="candle up" style="--i:9"><line x1="137.0" y1="97.5" x2="137.0" y2="118.0"/><rect x="132.9" y="103.9" width="8.1" height="3.5" rx="1"/></g><g class="candle up" style="--i:10"><line x1="151.0" y1="90.5" x2="151.0" y2="111.0"/><rect x="146.9" y="99.0" width="8.1" height="5.0" rx="1"/></g><g class="candle up" style="--i:11"><line x1="165.0" y1="83.6" x2="165.0" y2="103.7"/><rect x="160.9" y="90.2" width="8.1" height="8.8" rx="1"/></g><g class="candle up" style="--i:12"><line x1="179.0" y1="60.3" x2="179.0" y2="100.7"/><rect x="174.9" y="72.4" width="8.1" height="17.7" rx="1"/></g><g class="candle up" style="--i:13"><line x1="193.0" y1="57.3" x2="193.0" y2="76.7"/><rect x="188.9" y="62.4" width="8.1" height="10.0" rx="1"/></g><g class="candle dn" style="--i:14"><line x1="207.0" y1="59.8" x2="207.0" y2="73.4"/><rect x="202.9" y="62.4" width="8.1" height="1.4" rx="1"/></g><g class="candle up" style="--i:15"><line x1="221.0" y1="51.2" x2="221.0" y2="69.5"/><rect x="216.9" y="61.8" width="8.1" height="1.8" rx="1"/></g><g class="candle up" style="--i:16"><line x1="235.0" y1="34.5" x2="235.0" y2="63.7"/><rect x="230.9" y="45.1" width="8.1" height="16.7" rx="1"/></g><g class="candle dn" style="--i:17"><line x1="249.0" y1="33.9" x2="249.0" y2="55.2"/><rect x="244.9" y="45.1" width="8.1" height="3.3" rx="1"/></g><g class="candle up" style="--i:18"><line x1="263.0" y1="25.2" x2="263.0" y2="51.1"/><rect x="258.9" y="31.2" width="8.1" height="17.3" rx="1"/></g><g class="candle up" style="--i:19"><line x1="277.0" y1="13.3" x2="277.0" y2="35.8"/><rect x="272.9" y="23.2" width="8.1" height="7.9" rx="1"/></g><g class="candle dn" style="--i:20"><line x1="291.0" y1="17.9" x2="291.0" y2="41.6"/><rect x="286.9" y="23.2" width="8.1" height="6.6" rx="1"/></g><g class="candle up" style="--i:21"><line x1="305.0" y1="15.4" x2="305.0" y2="34.2"/><rect x="300.9" y="18.5" width="8.1" height="11.3" rx="1"/></g><g class="candle dn" style="--i:22"><line x1="319.0" y1="16.0" x2="319.0" y2="34.8"/><rect x="314.9" y="18.5" width="8.1" height="6.2" rx="1"/></g><g class="candle dn" style="--i:23"><line x1="333.0" y1="17.0" x2="333.0" y2="35.3"/><rect x="328.9" y="24.7" width="8.1" height="4.2" rx="1"/></g><g class="candle dn" style="--i:24"><line x1="347.0" y1="19.4" x2="347.0" y2="35.9"/><rect x="342.9" y="28.8" width="8.1" height="3.8" rx="1"/></g><g class="candle up" style="--i:25"><line x1="361.0" y1="21.3" x2="361.0" y2="38.9"/><rect x="356.9" y="24.4" width="8.1" height="8.3" rx="1"/></g><g class="candle dn" style="--i:26"><line x1="375.0" y1="19.7" x2="375.0" y2="39.5"/><rect x="370.9" y="24.4" width="8.1" height="3.2" rx="1"/></g><g class="candle up" style="--i:27"><line x1="389.0" y1="10.0" x2="389.0" y2="38.6"/><rect x="384.9" y="15.0" width="8.1" height="12.6" rx="1"/></g></svg>
+            <div class="t-grid">
+                <div><span>Enter at</span><b class="mono cy">14:57:00</b></div>
+                <div><span>Expires</span><b class="mono">14:58:00</b></div>
+                <div><span>Confidence</span><b class="mono">79%</b></div>
+            </div>
+            <div class="t-timer">
+                <div><span>Time to entry</span><b class="mono" id="demoTimer">00:30</b></div>
+                <div class="bar"><i id="demoBar"></i></div>
+            </div>
+            <div class="votes">
+                <div><span>RSI</span><div class="bar thin"><i style="width:78%"></i></div></div>
+                <div><span>EMA</span><div class="bar thin"><i style="width:90%"></i></div></div>
+                <div><span>MACD</span><div class="bar thin"><i style="width:67%"></i></div></div>
+            </div>
+        </div>
+    </div>
+    <a class="scroll-cue" href="#engines" aria-label="Scroll down"><i></i></a>
+</section>
+
+<!-- ───────────── Ticker ───────────── -->
+<div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="tickerTrack">
+        <span>EUR/USD</span><span>GBP/JPY</span><span>AUD/CAD</span><span>USD/CHF</span><span>NZD/USD</span><span>EUR/GBP</span><span>USD/CAD</span><span>AUD/JPY</span><span>GBP/USD</span><span>CAD/JPY</span><span>EUR/JPY</span><span>NZD/CAD</span>
+    </div>
+</div>
+
+<!-- ───────────── AUROX AI ───────────── -->
+<section class="section" id="engines">
+    <div class="section-head">
+        <p class="eyebrow reveal">AUROX AI</p>
+        <h2 class="reveal" style="--d:.07s">One engine, built for both brokers.</h2>
+        <p class="muted reveal" style="--d:.14s">AUROX AI reads live one minute candles, scores every open pair, and has Claude review the shortlist before a call reaches you. Choose Pocket Option or Quotex when you sign in.</p>
+    </div>
+
+    <article class="aurox-card reveal spot">
+        <div class="aurox-main">
+            <h3>AUROX <em>AI</em></h3>
+            <p class="aurox-line">A signal engine that combines three indicators with an AI review, then delivers one call for the next candle.</p>
+            <ul class="ticks">
+                <li>Scans every open pair paying <b>80% or more</b>, refreshed every minute</li>
+                <li><b>RSI, EMA and MACD</b> vote on direction and set a confidence score</li>
+                <li><b>Claude reviews the top candidates</b> and can reject a weak setup</li>
+                <li>Entry, expiry and a live countdown in your own time zone</li>
+            </ul>
+            <div class="brokers-row">
+                <span class="broker-pill"><b>Quotex</b> currency and OTC pairs, live ticks</span>
+                <span class="broker-pill"><b>Pocket Option</b> forex pairs, broker candles</span>
+            </div>
+        </div>
+
+        <div class="aurox-claude">
+            <span class="claude-tag">AI JUDGEMENT</span>
+            <h4>Claude has the final say on setup quality</h4>
+            <p>The indicators shortlist three candidates. Claude looks at their recent price action and indicator scores, picks the cleanest one, or rejects all three when the market looks choppy or exhausted, and gives a short reason you can read next to the call.</p>
+            <p class="claude-note">Claude judges setup quality only. It cannot predict the market, and only price data is sent to it.</p>
+        </div>
+    </article>
+
+    <div class="mech-head reveal">
+        <p class="eyebrow">HOW A CALL IS MADE</p>
+        <h3>The mechanism, step by step</h3>
+    </div>
+    <div class="timeline" id="timeline">
+        <div class="tl-line"><i id="tlFill"></i></div>
+        <ol class="steps">
+            <li class="reveal"><span class="n">01</span><div><h4>Collect</h4><p>A live feed of one minute candles for every open pair above the payout threshold. On Quotex the newest candles are built from the live tick stream so they are never stale.</p></div></li>
+            <li class="reveal"><span class="n">02</span><div><h4>Measure</h4><p><b>RSI</b> reads momentum, <b>EMA 9 and 21</b> read trend, and <b>MACD</b> checks that momentum is still building. Only closed candles with no gaps are used.</p></div></li>
+            <li class="reveal"><span class="n">03</span><div><h4>Vote and rank</h4><p>The three indicators vote on direction. A tie means no call. Pairs where they agree are ranked by weighted confidence and the top three go forward.</p></div></li>
+            <li class="reveal claude-step"><span class="n">04</span><div><h4>Claude judgement</h4><p>Claude reviews the shortlist, picks the cleanest setup or rejects all of them, and explains its reason in a line. If the review is unavailable, the indicator ranking is used.</p></div></li>
+            <li class="reveal"><span class="n">05</span><div><h4>Deliver</h4><p>The chosen pair is shown with entry at the next full minute, expiry one minute later, and a live countdown that follows the server clock.</p></div></li>
+        </ol>
+    </div>
+</section>
+
+<!-- ───────────── Features (bento) ───────────── -->
+<section class="section" id="features">
+    <div class="section-head">
+        <p class="eyebrow reveal">BUILT AROUND THE TRADER</p>
+        <h2 class="reveal" style="--d:.07s">Everything a signal desk should have, and nothing it shouldn't.</h2>
+    </div>
+    <div class="bento">
+        <div class="tile t-wide reveal spot">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg></div>
+            <h4>Exact timing</h4>
+            <p class="short">Entry and expiry are fixed to the next candle, with a countdown that follows the server clock, not your device.</p>
+            <div class="mini-timer mono" aria-hidden="true"><span>00:</span><span id="miniSec">27</span></div>
+        </div>
+        <div class="tile reveal spot" style="--d:.07s">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg></div>
+            <h4>Your time zone</h4>
+            <p>Search any city or country at login. Times are remembered for next time.</p>
+        </div>
+        <div class="tile reveal spot" style="--d:.14s">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9M3 21h18"/></svg></div>
+            <h4>Real chart context</h4>
+            <p>Every call comes with the last 60 minutes of closes for the chosen pair.</p>
+        </div>
+        <div class="tile reveal spot">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></div>
+            <h4>Correlation view</h4>
+            <p>See which pairs move together right now, to avoid stacking the same bet twice.</p>
+        </div>
+        <div class="tile reveal spot" style="--d:.07s">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h4>Analysis only</h4>
+            <p>No auto trading and no order placement. The engines only read market data.</p>
+        </div>
+        <div class="tile t-wide reveal spot" style="--d:.14s">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+            <h4>Self healing feed</h4>
+            <p>Dropped connections and expired sessions are detected and re established automatically, with stale data flagged so you never act on an old candle.</p>
+            <div class="pulse-row" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+    </div>
+</section>
+
+<!-- ───────────── Security ───────────── -->
+<section class="section" id="security">
+    <div class="section-head">
+        <p class="eyebrow reveal">SECURITY &amp; PRIVACY</p>
+        <h2 class="reveal" style="--d:.07s">Built to be safe to sign in to.</h2>
+        <p class="muted reveal" style="--d:.14s">Your broker account is never touched. These are the protections that are actually in the product.</p>
+    </div>
+    <div class="sec-grid">
+        <div class="sec-card reveal">
+            <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+            <h4>Read only by design</h4>
+            <p>The terminals only read market data. They <b>never place orders</b> and never ask for your broker password.</p>
+        </div>
+        <div class="sec-card reveal" style="--d:.07s">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.3-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></div>
+            <h4>Verified access</h4>
+            <p>Your ID is <b>checked before a terminal opens</b>: Pocket Option traders against partner records, Quotex against an access list.</p>
+        </div>
+        <div class="sec-card reveal" style="--d:.14s">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h4>Signed sessions</h4>
+            <p>Sign in issues a <b>cryptographically signed, expiring token</b> tied to one broker. Missing, expired or tampered tokens are rejected.</p>
+        </div>
+        <div class="sec-card reveal">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg></div>
+            <h4>Auto sign out</h4>
+            <p>Your session ends when you close the tab and after <b>30 minutes of inactivity</b>. Tokens are kept per tab, not on disk.</p>
+        </div>
+        <div class="sec-card reveal" style="--d:.07s">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+            <h4>Rate limited &amp; hardened</h4>
+            <p>Login attempts are <b>rate limited</b>. The site ships a strict Content Security Policy, HSTS, and clickjacking and MIME sniffing protection.</p>
+        </div>
+        <div class="sec-card reveal" style="--d:.14s">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg></div>
+            <h4>Private by default</h4>
+            <p>No ads and <b>no analytics or tracking scripts</b>. The only third party request is the font provider.</p>
+        </div>
+    </div>
+    <p class="sec-foot reveal">Traffic is served over <b>HTTPS</b>. No system is perfectly secure: keep your own devices updated, never share your access ID, and sign out on shared computers.</p>
+</section>
+
+<!-- ───────────── Compare ───────────── -->
+<section class="section" id="compare">
+    <div class="section-head">
+        <p class="eyebrow reveal">SIDE BY SIDE</p>
+        <h2 class="reveal" style="--d:.07s">Pocket Option vs Quotex terminals</h2>
+    </div>
+    <div class="table-wrap reveal">
+        <table class="compare">
+            <thead><tr><th></th><th class="a">AUROX AI · Pocket Option</th><th class="b">AUROX AI · Quotex</th></tr></thead>
+            <tbody>
+                <tr><th>Broker data</th><td>Pocket Option</td><td>Quotex</td></tr>
+                <tr><th>Pairs scanned</th><td>Forex, payout 80%+</td><td>Currency pairs incl. OTC, payout 80%+</td></tr>
+                <tr><th>Latest candles</th><td>Broker candle history</td><td>Live ticks merged over history</td></tr>
+                <tr><th>Indicators</th><td colspan="2" class="span">RSI · EMA 9/21 · MACD, majority vote and weighted confidence</td></tr>
+                <tr><th>Candle size</th><td colspan="2" class="span">1 minute, entry at next full minute</td></tr>
+                <tr><th>Interface</th><td>Dark neon terminal</td><td>Light signal desk with call history</td></tr>
+                <tr><th>Access</th><td>Verified Trader ID</td><td>Access ID</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ───────────── FAQ ───────────── -->
+<section class="section" id="faq">
+    <div class="section-head">
+        <p class="eyebrow reveal">QUESTIONS</p>
+        <h2 class="reveal" style="--d:.07s">Frequently asked</h2>
+    </div>
+    <div class="faq">
+        <details class="reveal" open>
+            <summary>Do the engines place trades for me?</summary>
+            <p>No. They only read market data and show a call. You decide whether to trade, and you place any trade yourself on your broker.</p>
+        </details>
+        <details class="reveal">
+            <summary>What do BUY and SELL mean?</summary>
+            <p>BUY (a "call") means the engine expects the next 1 minute candle to close higher than its entry price; SELL (a "put") means lower.</p>
+        </details>
+        <details class="reveal">
+            <summary>Which broker should I choose at sign in?</summary>
+            <p>Sign in once and pick the broker you trade on, Pocket Option or Quotex. AUROX AI then opens with that broker's own prices, so the call lines up with the chart you trade.</p>
+        </details>
+        <details class="reveal">
+            <summary>Where does Claude fit in?</summary>
+            <p>After the indicators shortlist the top three pairs, Claude reviews their recent price action and picks the cleanest setup, or rejects all of them. It gives a one line reason. It judges setup quality only and cannot predict the market. Only price data and indicator scores are sent to it, never your ID or any account detail.</p>
+        </details>
+        <details class="reveal">
+            <summary>How accurate are the signals?</summary>
+            <p>We don't publish a win rate, because short term direction is hard to predict and any figure without long, independent testing would be misleading. Treat every signal as one input, size your risk accordingly, and test on a demo account.</p>
+        </details>
+        <details class="reveal">
+            <summary>Why did the scan say "no signal" or "warming up"?</summary>
+            <p>A call needs the three indicators to agree and enough clean, recent candles. After a restart the Quotex engine needs a few minutes to rebuild live candles; at other times no pair may have a clear setup.</p>
+        </details>
+        <details class="reveal">
+            <summary>Can I see times in my own country?</summary>
+            <p>Yes. Choose your time zone at login. Entry, expiry and history times are converted for display; the countdown always follows the server clock.</p>
+        </details>
+    </div>
+</section>
+
+<!-- ───────────── CTA ───────────── -->
+<section class="cta reveal">
+    <h2>Ready when the next candle is.</h2>
+    <p>Sign in, pick your broker and get your first call in under a minute.</p>
+    <div class="cta-actions">
+        <a class="btn btn-blue" href="login/">Access Terminal <span aria-hidden="true">→</span></a>
+    </div>
+</section>
+</main>
+
+<footer class="footer">
+    <div class="foot-brand">
+        <a class="logo" href="#top"><img src="mark.svg" alt="" width="32" height="32"><span>Trading<b>Signal</b></span></a>
+        <p class="muted">Signal analysis for 1 minute binary charts. Not financial advice.</p>
+    </div>
+    <div class="foot-links">
+        <a href="#engines">AUROX AI</a><a href="#faq">FAQ</a>
+    </div>
+    <p class="fine">© 2026 TradingSignal. Pocket Option and Quotex are trademarks of their respective owners; this site is independent and unaffiliated. Trading involves substantial risk of loss.</p>
+</footer>
+
+<script src="script.js?v=3"></script>
+</body>
+</html>

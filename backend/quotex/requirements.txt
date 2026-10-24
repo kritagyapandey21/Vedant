@@ -1,0 +1,10 @@
+fastapi>=0.115.0
+uvicorn>=0.34.0
+pydantic>=2.10.0
+python-dotenv>=1.0.0
+slowapi>=0.1.9
+numpy>=2.0.0
+tzdata>=2025.2
+# Quotex client (async websocket + Playwright login): install from the sibling checkout
+-e ../../API-Quotex
+anthropic>=0.50.0

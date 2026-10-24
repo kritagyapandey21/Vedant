@@ -1,0 +1,118 @@
+/* ═════════ Soft-glass layer (loaded after styles.css) ═════════ */
+:root {
+    --glass: linear-gradient(155deg, rgba(255,255,255,.085), rgba(255,255,255,.028));
+    --glass-hover: linear-gradient(155deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    --glass-edge: rgba(255,255,255,.11);
+    --glass-blur: blur(22px) saturate(1.5);
+    --glass-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 30px 60px -34px rgba(0,0,0,.75);
+}
+
+/* richer, slowly drifting colour behind the glass so the blur actually reads */
+.glow-1 { background: rgba(76,141,255,.30); animation: drift 22s ease-in-out infinite alternate; }
+.glow-2 { background: rgba(90,184,214,.15); animation: drift 26s ease-in-out infinite alternate-reverse; }
+.glow-3 { background: rgba(120,110,255,.18); animation: drift 30s ease-in-out infinite alternate; }
+@keyframes drift { to { margin: 40px 0 0 -50px; } }
+
+.ticket, .engine, .tile, .steps li, .table-wrap, .faq details, .cta, .sec-card {
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow);
+}
+.ticket { border-radius: 24px; }
+.engine, .cta { border-radius: 26px; }
+.tile, .steps li, .sec-card { border-radius: 20px; }
+.ticket-tag { background: rgba(7,8,11,.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-color: var(--glass-edge); }
+.engine.in:hover, .tile.in:hover, .sec-card:hover, .steps li:hover, .faq details[open] { background: var(--glass-hover); border-color: rgba(255,255,255,.2); }
+.compare thead th { background: rgba(255,255,255,.05); }
+.compare .span { background: rgba(255,255,255,.03); }
+.chip, .engine-badge { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.ico { background: linear-gradient(145deg, rgba(76,141,255,.22), rgba(255,255,255,.04)); border-color: rgba(134,173,255,.28); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+.btn-ghost { background: rgba(255,255,255,.05); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-color: var(--glass-edge); }
+.btn-blue, .btn-engine-a { background: linear-gradient(180deg, #5b98ff, #3f7ef0); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 10px 26px -10px rgba(76,141,255,.7); }
+.btn-blue:hover, .btn-engine-a:hover { background: linear-gradient(180deg, #6ba3ff, #4a87f5); }
+.nav.scrolled { background: rgba(10,12,18,.55); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); border-color: var(--glass-edge); }
+.ticker { background: rgba(255,255,255,.03); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.footer { background: rgba(255,255,255,.02); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+
+/* ───── Security section ───── */
+.sec-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.sec-card { padding: 26px; transition: background .3s, border-color .3s, opacity .85s var(--ease), transform .85s var(--ease); }
+.sec-card .ico { margin-bottom: 18px; }
+.sec-card h4 { font-size: 16.5px; margin-bottom: 6px; letter-spacing: -.015em; font-weight: 600; }
+.sec-card p { font-size: 14px; color: var(--muted); }
+.sec-card p b { color: var(--text-2); font-weight: 500; }
+.sec-foot { margin-top: 22px; font-size: 13px; color: var(--muted); max-width: 760px; }
+.sec-foot b { color: var(--text-2); font-weight: 500; }
+@media (max-width: 980px) { .sec-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .sec-grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .glow { animation: none !important; } }
+
+/* ═════════ Pitch-black base (overrides the blue ambient wash) ═════════ */
+:root {
+    --bg: #000000;
+    --bg-2: #030304;
+    --surface: #08080a;
+    --surface-2: #0d0d10;
+    --glass: linear-gradient(155deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    --glass-hover: linear-gradient(155deg, rgba(255,255,255,.1), rgba(255,255,255,.035));
+    --glass-edge: rgba(255,255,255,.1);
+}
+html, body { background: #000; }
+.glow { display: none; }                       /* no coloured light behind the page */
+.bg-grid { opacity: .55; }                     /* faint grid only */
+.nav.scrolled { background: rgba(0,0,0,.62); }
+.ticker { background: rgba(255,255,255,.02); }
+.footer { background: #000; }
+.cta { background: radial-gradient(520px 200px at 50% 0%, rgba(76,141,255,.10), transparent 70%), linear-gradient(155deg, rgba(255,255,255,.06), rgba(255,255,255,.015)); }
+.ticket { box-shadow: inset 0 1px 0 rgba(255,255,255,.09), 0 40px 80px -40px rgba(0,0,0,1), 0 0 0 1px rgba(0,0,0,.6); }
+
+/* ═════════ Wordmark ═════════ */
+.logo { font-size: 19px; letter-spacing: -.025em; gap: 10px; font-weight: 400; color: var(--text); }
+.logo b { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--text); font-weight: 700; }
+.logo em { color: var(--accent); font-weight: 500; }
+.logo img { border-radius: 9px; transition: transform .4s var(--ease); }
+.logo:hover img { transform: none; }
+
+/* ═════════ Candlestick chart (hero sample) ═════════ */
+.spark .cgrid { stroke: rgba(255,255,255,.07); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.spark .clast { stroke: rgba(61,220,151,.55); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; opacity: 0; animation: fadein .6s 1.9s forwards; }
+.spark .candle line { stroke-width: 1.3; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.spark .candle.up line { stroke: #3ddc97; } .spark .candle.up rect { fill: #3ddc97; }
+.spark .candle.dn line { stroke: #ff6b7d; } .spark .candle.dn rect { fill: #ff6b7d; }
+.spark .candle { transform-box: fill-box; transform-origin: 50% 100%; animation: candle-in .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(.35s + var(--i) * 55ms); }
+@keyframes candle-in { from { opacity: 0; transform: scaleY(.15); } to { opacity: 1; transform: none; } }
+.spark .candle:last-of-type rect { animation: live 2.4s 2.2s ease-in-out infinite; }
+@keyframes live { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .spark .candle, .spark .clast, .spark .candle:last-of-type rect { animation: none !important; opacity: 1; } }
+
+/* ═════════ Single AUROX AI section ═════════ */
+.aurox-card { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; border-radius: 26px; overflow: hidden; background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); position: relative; }
+.aurox-card::before { z-index: 0; }
+.aurox-main { padding: 36px; position: relative; z-index: 1; }
+.aurox-main h3 { font-size: 44px; letter-spacing: -.045em; font-weight: 600; line-height: 1.05; }
+.aurox-main h3 em { font-style: normal; color: var(--accent-2); font-weight: 500; }
+.aurox-line { color: var(--muted); margin: 12px 0 22px; max-width: 480px; }
+.aurox-main .ticks { padding-top: 22px; margin-bottom: 24px; border-top: 1px solid var(--line); }
+.brokers-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.broker-pill { display: inline-flex; gap: 8px; align-items: baseline; padding: 8px 14px; border-radius: 999px; font-size: 13px; color: var(--muted); background: rgba(255,255,255,.05); border: 1px solid var(--glass-edge); }
+.broker-pill b { color: var(--text); font-weight: 600; }
+
+.aurox-claude { padding: 36px; position: relative; z-index: 1; border-left: 1px solid var(--glass-edge); background: linear-gradient(160deg, rgba(76,141,255,.14), rgba(76,141,255,.02) 60%); display: flex; flex-direction: column; justify-content: center; }
+.claude-tag { align-self: flex-start; font-size: 10.5px; letter-spacing: .14em; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: rgba(76,141,255,.18); color: var(--accent-2); border: 1px solid rgba(134,173,255,.3); }
+.aurox-claude h4 { font-size: 22px; letter-spacing: -.025em; font-weight: 600; line-height: 1.25; margin: 16px 0 12px; }
+.aurox-claude p { font-size: 14.5px; color: var(--muted); }
+.aurox-claude .claude-note { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--glass-edge); font-size: 13px; }
+
+.mech-head { margin: 64px 0 28px; }
+.mech-head h3 { font-size: 26px; letter-spacing: -.03em; font-weight: 600; margin-top: 10px; }
+.steps li.claude-step { border-color: rgba(134,173,255,.4); background: linear-gradient(155deg, rgba(76,141,255,.16), rgba(255,255,255,.02)); }
+.steps li.claude-step .n { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--accent-2); }
+
+@media (max-width: 980px) {
+    .aurox-card { grid-template-columns: 1fr; }
+    .aurox-claude { border-left: 0; border-top: 1px solid var(--glass-edge); }
+    .aurox-main, .aurox-claude { padding: 28px 24px; }
+    .aurox-main h3 { font-size: 36px; }
+}

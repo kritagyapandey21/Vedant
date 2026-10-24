@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 296 64" role="img" aria-label="TradingSignal">
+  <rect width="64" height="64" rx="15" fill="#f3f5f9"/>
+  <g transform="translate(2 0)" fill="none" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 26h17M26.5 26v27" stroke="#0a0b0e"/>
+    <path d="M31 26l16-16M35.5 10H47v11.5" stroke="#3b7bf5"/>
+  </g>
+  <text x="82" y="42" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="30" letter-spacing="-.8" fill="#f3f5f9"><tspan font-weight="400">Trading</tspan><tspan font-weight="700">Signal</tspan></text>
+</svg>

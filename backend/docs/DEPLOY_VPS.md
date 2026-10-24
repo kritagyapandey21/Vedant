@@ -15,8 +15,9 @@ Replace these three values everywhere:
 | `PO_PORT` | `8001` | local port for the Pocket Option backend (must be free) |
 | `QX_PORT` | `8002` | local port for the Quotex backend (must be free) |
 
-**Use a subdomain** (not the bare domain). A subdomain needs one DNS record, cannot disturb whatever the bare domain
-points at today, and can be removed again by deleting that record.
+**Subdomain or main domain.** A subdomain (`signals.example.com`) needs one DNS record and cannot disturb whatever the
+main domain points at. The main domain (`example.com`) also works: add an `A` record for `@` (and keep `www` as a CNAME to
+it), and the Nginx file redirects `www` to the main address. Only do this if nothing else uses the main domain.
 
 ---
 
@@ -140,14 +141,14 @@ Step A, a tiny HTTP-only block so Let's Encrypt can verify the hostname:
 cat > /etc/nginx/conf.d/tradingsignal-acme.conf <<'EOF'
 server {
     listen 80;
-    server_name DOMAIN;
+    server_name DOMAIN www.DOMAIN;
     location /.well-known/acme-challenge/ { root /var/www/ts-acme; }
     location / { return 404; }
 }
 EOF
 nginx -t && systemctl reload nginx
 apt install -y certbot
-certbot certonly --webroot -w /var/www/ts-acme -d DOMAIN
+certbot certonly --webroot -w /var/www/ts-acme -d DOMAIN -d www.DOMAIN
 ```
 
 `certonly --webroot` only creates the certificate; unlike `certbot --nginx` it does **not** edit any Nginx file, so the

@@ -1,0 +1,19 @@
+# secrets and local state: never commit
+.env
+*.sqlite3
+sessions/
+qx_data/
+data/
+backups/
+
+# python
+venv/
+__pycache__/
+*.py[cod]
+*.log
+log-*.txt
+
+# misc
+.vscode/
+node_modules/
+*.zip

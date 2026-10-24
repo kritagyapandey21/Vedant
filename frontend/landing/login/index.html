@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AUROX AI terminal</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/svg+xml" href="../mark.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="login.css?v=10">
+</head>
+<body>
+<div class="bg" aria-hidden="true"><div class="bg-grid"></div></div>
+
+<header class="top">
+    <a class="logo" href="../" aria-label="Back to TradingSignal">
+        <img src="../mark.svg" alt="" width="34" height="34">
+        <span>Trading<b>Signal</b></span>
+    </a>
+    <a class="back" href="../">← Back to site</a>
+</header>
+
+<main class="stage">
+    <form id="form" class="card" novalidate>
+        <h1><span>AUROX AI</span> terminal</h1>
+
+        <fieldset class="brokers" aria-label="Broker">
+            <legend>Broker</legend>
+            <label class="broker" data-broker="quotex">
+                <input type="radio" name="broker" value="quotex" checked>
+                <span class="b-body">
+                    <span class="b-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8" /></svg></span>
+                    <span class="b-text"><b>Quotex</b><small>Currency &amp; OTC · live ticks</small></span>
+                    <span class="b-check" aria-hidden="true"></span>
+                </span>
+            </label>
+            <label class="broker" data-broker="pocket">
+                <input type="radio" name="broker" value="pocket">
+                <span class="b-body">
+                    <span class="b-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9"/><path d="M3 21h18"/></svg></span>
+                    <span class="b-text"><b>Pocket Option</b><small>Forex pairs · broker candles</small></span>
+                    <span class="b-check" aria-hidden="true"></span>
+                </span>
+            </label>
+        </fieldset>
+
+        <label class="field-label" for="idInput" id="idLabel">Quotex Access ID</label>
+        <input id="idInput" type="text" autocomplete="username" spellcheck="false" maxlength="32" placeholder="Enter your ID">
+
+        <label class="field-label" for="tzTrigger">Display time zone</label>
+        <div class="tz" id="tzPicker">
+            <button type="button" id="tzTrigger" class="tz-trigger" aria-haspopup="listbox" aria-expanded="false">Select time zone</button>
+            <div id="tzMenu" class="tz-menu" hidden>
+                <input id="tzSearch" type="search" placeholder="Search country, city or zone" autocomplete="off">
+                <div id="tzOptions" class="tz-options"></div>
+            </div>
+        </div>
+
+        <p id="msg" class="msg" role="alert"></p>
+        <button id="submit" class="btn" type="submit"><span id="submitText">Open terminal</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <p class="fine" id="signup">Don't have a <span id="signupName">Quotex</span> account? <a id="signupLink" href="https://quotex.com" target="_blank" rel="noopener noreferrer">Click here</a></p>
+    </form>
+</main>
+
+<script src="login.js?v=6"></script>
+</body>
+</html>

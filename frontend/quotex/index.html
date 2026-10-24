@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#000000">
+    <title>AUROX AI · Quotex terminal</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23f3f5f9'/%3E%3Cg transform='translate(2 0)' fill='none' stroke-width='5.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 26h17M26.5 26v27' stroke='%230a0b0e'/%3E%3Cpath d='M31 26l16-16M35.5 10H47v11.5' stroke='%233b7bf5'/%3E%3C/g%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body>
+
+<!-- ───────────── Sign in (split screen) ───────────── -->
+<div id="loginView" class="login">
+    <section class="login-story">
+        <div class="brand"><b>AUROX</b><i>AI</i></div>
+        <div class="story-copy">
+            <p class="kicker">ONE MINUTE SIGNAL DESK</p>
+            <h1>Scan every open Quotex pair.<br>Get one clear call for the next candle.</h1>
+            <ul class="story-points">
+                <li><span>01</span>Reads live Quotex candles and never places a trade</li>
+                <li><span>02</span>RSI, Bollinger and Stochastic RSI look for a stretched price</li>
+                <li><span>03</span>Entry and expiry shown in your own time zone</li>
+            </ul>
+        </div>
+        <svg class="story-wave" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 110 C60 100 90 40 150 60 S240 140 300 90 S410 20 470 55 S560 100 600 30"/>
+        </svg>
+    </section>
+
+    <section class="login-form-side">
+        <form id="loginForm" class="login-box" novalidate>
+            <h2>Sign in</h2>
+            <p class="muted">Enter your access ID to open the desk.</p>
+
+            <label for="idInput">Access ID</label>
+            <input id="idInput" type="text" autocomplete="username" spellcheck="false" maxlength="32" placeholder="e.g. TRADER-1024">
+
+            <label for="tzTrigger">Display time zone</label>
+            <div class="tz" id="tzPicker">
+                <button type="button" id="tzTrigger" class="tz-trigger" aria-haspopup="listbox" aria-expanded="false">Select time zone</button>
+                <div id="tzMenu" class="tz-menu" hidden>
+                    <input id="tzSearch" type="search" placeholder="Search country, city or zone" autocomplete="off">
+                    <div id="tzOptions" class="tz-options"></div>
+                </div>
+            </div>
+
+            <p id="loginError" class="form-error" role="alert"></p>
+            <button id="loginBtn" class="btn-primary" type="submit">Continue</button>
+            <p class="fine">Signals are analysis only, not financial advice. Binary options carry a high risk of loss.</p>
+        </form>
+    </section>
+</div>
+
+<!-- ───────────── Desk ───────────── -->
+<div id="deskView" class="desk" hidden>
+    <aside class="rail">
+        <div class="brand"><b>AUROX</b><i>AI</i></div>
+
+        <div class="rail-block rail-user">
+            <span class="rail-label">Signed in as</span>
+            <strong id="who" class="rail-value"></strong>
+        </div>
+
+        <div class="rail-block rail-time">
+            <span class="rail-label">Clock · <em id="tzName"></em></span>
+            <strong id="clock" class="rail-clock">00:00:00</strong>
+        </div>
+
+        <div class="rail-block rail-feed">
+            <span class="rail-label">Data feed</span>
+            <div class="feed"><i id="feedDot" class="dot"></i><strong id="feedText">Connecting…</strong></div>
+            <small id="feedMeta" class="rail-sub"></small>
+        </div>
+
+        <div class="rail-block grow">
+            <span class="rail-label">Watching <em id="pairCount">0</em> pairs</span>
+            <ul id="watchlist" class="watchlist"></ul>
+        </div>
+
+        <button id="logoutBtn" class="rail-logout" type="button">Sign out</button>
+    </aside>
+
+    <main class="stage">
+        <header class="stage-head">
+            <div>
+                <p class="kicker">NEXT CANDLE CALL · 1 MIN</p>
+                <h2>Signal desk</h2>
+            </div>
+            <button id="scanBtn" class="btn-scan" type="button" disabled>
+                <span id="scanSpin" class="spin" hidden></span>
+                <span id="scanLabel">Scan market</span>
+            </button>
+        </header>
+
+        <p id="notice" class="notice" role="status">Waiting for the data feed…</p>
+
+        <!-- The ticket -->
+        <section id="ticket" class="ticket" hidden>
+            <div class="ticket-main">
+                <div class="ticket-top">
+                    <div>
+                        <span class="chip" id="srcChip">QUOTEX</span>
+                        <h3 id="tPair"></h3>
+                        <p class="muted">Last price <b id="tPrice" class="mono"></b></p>
+                    </div>
+                    <div id="tCall" class="call">
+                        <span class="call-word" id="tDir"></span>
+                        <span class="call-sub" id="tDirSub"></span>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="chart" aria-label="Last 60 one-minute closes"></canvas>
+                    <div id="tip" class="tip" hidden></div>
+                </div>
+                <div class="chart-foot"><span>60 min ago</span><span>closed 1 minute candles</span><span>now</span></div>
+            </div>
+
+            <div class="ticket-side">
+                <div class="timeline">
+                    <div class="tl-row"><span>Generated</span><b id="tGen" class="mono"></b></div>
+                    <div class="tl-row hot"><span>Enter at</span><b id="tEntry" class="mono"></b></div>
+                    <div class="tl-row"><span>Expires</span><b id="tExpiry" class="mono"></b></div>
+                </div>
+
+                <div class="timer">
+                    <div class="timer-head"><span id="timerLabel">Time to entry</span><b id="timerValue" class="mono">00:00</b></div>
+                    <div class="bar"><i id="timerBar"></i></div>
+                </div>
+
+                <div class="conf">
+                    <div class="timer-head"><span>Setup strength</span><b id="tConf" class="mono"></b></div>
+                    <div class="segments" id="segments"></div>
+                </div>
+
+                <div class="votes">
+                    <div class="vote"><span>RSI</span><div class="bar thin"><i id="vRsi"></i></div><b id="vRsiN" class="mono"></b></div>
+                    <div class="vote"><span>BOLL</span><div class="bar thin"><i id="vEma"></i></div><b id="vEmaN" class="mono"></b></div>
+                    <div class="vote"><span>STOCH</span><div class="bar thin"><i id="vMacd"></i></div><b id="vMacdN" class="mono"></b></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="empty" class="empty">
+            <div class="empty-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <h3>No signal yet</h3>
+            <p class="muted">Press <b>Scan market</b> to rank every watched pair and pick the strongest setup.</p>
+        </section>
+
+        <div class="lower">
+            <section class="card monitor">
+                <div class="card-head"><h4>AI market monitor</h4><span class="live-tag"><i></i>LIVE</span></div>
+                <div class="scope-head">
+                    <div><b id="monPair" class="scope-pair">—</b><span id="monPrice" class="mono muted small"></span></div>
+                    <div class="mon-status mono"><span id="monLine">Starting analysis…</span><b class="caret"></b></div>
+                </div>
+                <canvas id="monCanvas" class="scope" aria-label="Live analysis of the pair being scanned"></canvas>
+                <div class="gauges">
+                    <div class="gauge"><span>RSI</span><div class="gbar"><i id="gRsi"></i></div><b id="gRsiN" class="mono">--</b></div>
+                    <div class="gauge"><span>%B</span><div class="gbar"><i id="gBb"></i></div><b id="gBbN" class="mono">--</b></div>
+                    <div class="gauge"><span>STOCH</span><div class="gbar"><i id="gSr"></i></div><b id="gSrN" class="mono">--</b></div>
+                </div>
+                <div class="mon-meta muted small"><span id="monCount">0 pairs</span><span id="monCycle">cycle 0</span></div>
+                <div id="monQueue" class="queue"></div>
+                <p id="monEmpty" class="muted small">Waiting for enough candles…</p>
+            </section>
+
+            <section class="card">
+                <div class="card-head"><h4>Moving together</h4><span class="muted small">strongest 1 min return correlations</span></div>
+                <ul id="corrList" class="corr"></ul>
+                <p id="corrEmpty" class="muted small">Waiting for enough candles…</p>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script src="app.js?v=4"></script>
+</body>
+</html>

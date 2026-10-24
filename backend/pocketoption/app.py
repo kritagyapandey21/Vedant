@@ -32,7 +32,7 @@ from slowapi.errors import RateLimitExceeded
 
 from config import (
     HOST, PORT, ALLOWED_ORIGINS, ADMIN_KEY,
-    LOG_LEVEL, LOG_FORMAT, TRADING_PAIRS, BYPASS_TRADER_ID, MIN_CONFIDENCE_THRESHOLD
+    LOG_LEVEL, LOG_FORMAT, TRADING_PAIRS, BYPASS_TRADER_ID, MIN_CONFIDENCE_THRESHOLD, ACCESS_IDS
 )
 import telegram_service
 import claude_judge
@@ -823,6 +823,8 @@ async def verify_trader(request: Request, payload: Dict) -> Dict:
     timezone_name = payload.get("timezone")
     if timezone_name is not None and not is_valid_timezone(timezone_name):
         raise HTTPException(status_code=400, detail="Invalid IANA timezone")
+    if ACCESS_IDS and trader_id.casefold() not in ACCESS_IDS:
+        return {"found": False, "message": "ACCESS DENIED, ID NOT AUTHORISED"}
     if BYPASS_TRADER_ID and trader_id.casefold() == BYPASS_TRADER_ID.casefold():
         result = {"found": True, "bypassed": True, "message": "TRADER VERIFIED"}
     else:

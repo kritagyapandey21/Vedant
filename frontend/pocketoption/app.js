@@ -177,7 +177,7 @@
     function drawChart() {
         const cv = $('chart'), pts = state.points;
         if (!pts.length) return;
-        const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
         cv.width = w * dpr; cv.height = h * dpr;
         const c = cv.getContext('2d'); c.scale(dpr, dpr); c.clearRect(0, 0, w, h);
         const vals = pts.map(p => p.close);
@@ -207,7 +207,7 @@
     }
     function initChartHover() {
         const cv = $('chart'), tip = $('tip');
-        cv.addEventListener('mousemove', e => {
+        cv.addEventListener('pointermove', e => {
             const pts = state.points, g = cv._geom;
             if (!pts.length || !g) return;
             const r = cv.getBoundingClientRect(), mx = e.clientX - r.left;
@@ -216,7 +216,8 @@
             tip.style.left = `${g.x(i)}px`; tip.style.top = `${g.y(pts[i].close) - 10}px`;
             tip.textContent = `${fmtTime(pts[i].time * 1000).slice(0, 5)} · ${pts[i].close.toFixed(decimals(pts[i].close))}`;
         });
-        cv.addEventListener('mouseleave', () => { tip.hidden = true; });
+        cv.addEventListener('pointerleave', () => { tip.hidden = true; });
+        cv.addEventListener('pointercancel', () => { tip.hidden = true; });
         window.addEventListener('resize', () => { if (state.signal) drawChart(); });
     }
 
@@ -302,7 +303,7 @@
         const cv = $('monCanvas'), p = mon.cur;
         if (!cv || !p) { if (!p) $('monLine').textContent = mon.total ? 'Waiting for candles…' : 'Connecting to the market feed…'; return; }
 
-        const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
         if (!w || !h) return;
         const key = `${w}x${h}x${dpr}`;
         if (mon.size !== key) { cv.width = w * dpr; cv.height = h * dpr; mon.size = key; }

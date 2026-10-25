@@ -214,11 +214,19 @@ Then delete the `signals` A record in the domain account. Nothing else on the se
 
 ## Known limits to expect
 
-- **Quotex on a server:** the server cannot log in with email and password (Cloudflare 403, and Quotex emails a code on a
-  new device). Instead the service uses a `session.json` that was created on your own PC and copied to
-  `/opt/tradingsignal/backend/quotex/qx_data/sessions/session.json` (owned by `tsignal`, mode 600). When Quotex rejects
-  it, the service tries to renew it through Chrome using the cookies stored in that file. If renewal fails, the log says
-  "copy a fresh session.json" and you repeat the copy. Use a **demo** session only.
+- **Quotex on a server:** Quotex cannot be logged into with plain Python from a server (Cloudflare 403), and a session
+  copied from another machine is rejected or expires within hours. Log in once inside the server's own Chrome instead:
+
+  ```bash
+  systemctl stop tradingsignal-quotex
+  sudo -u tsignal env QUOTEX_BROWSER_DIR=/opt/tradingsignal/browsers/cft xvfb-run -a       /opt/tradingsignal/venv/bin/python /opt/tradingsignal/backend/quotex_lib/tools/browser_login.py       --env /opt/tradingsignal/backend/quotex/.env       --out /opt/tradingsignal/backend/quotex/qx_data/sessions/session.json
+  systemctl start tradingsignal-quotex
+  ```
+
+  The tool signs in with `QX_EMAIL` / `QX_PASSWORD` from that `.env`, asks you to type the code Quotex emails, and saves a
+  `session.json` (mode 600) with the session and the long-lived account cookies. When Quotex later rejects the session the
+  service renews it through Chrome with those cookies; if that fails the log says to run this tool again. Use a **demo**
+  account.
 - **Quotex rate limit:** restarting the Quotex service often triggers HTTP 429. Restart it rarely.
 - **Pocket Option:** needs a valid `LO_UID` token; tokens expire and must be replaced.
 - **Memory:** the Quotex service plus headless Chromium needs roughly 600-900 MB at login time. If the VPS is already tight,

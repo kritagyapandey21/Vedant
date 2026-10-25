@@ -117,8 +117,8 @@ class QuotexFeed:
             self._last_login = time.time()
             fresh = await refresh_session(saved["cookies"], QX_IS_DEMO) if saved.get("cookies") else None
             if not fresh or not fresh.get("token"):
-                raise RuntimeError(f"Quotex rejected the saved session and it could not be renewed - "
-                                   f"copy a fresh session.json to {path}")
+                raise RuntimeError("Quotex rejected the saved session and it could not be renewed - run "
+                                   "quotex_lib/tools/browser_login.py on the server to log in again")
             saved.update({k: v for k, v in fresh.items() if v})
             saved["ssid"] = build_ssid(saved["token"], QX_IS_DEMO)
             saved["is_demo"] = QX_IS_DEMO
@@ -126,7 +126,7 @@ class QuotexFeed:
             os.chmod(path, 0o600)
             logger.info("Quotex session renewed through Chrome")
         if not saved.get("ssid"):
-            raise RuntimeError(f"no Quotex session found - copy session.json to {path}")
+            raise RuntimeError(f"no Quotex session found at {path} - run quotex_lib/tools/browser_login.py on the server")
         return saved["ssid"]
 
     async def _login(self, force: bool = False) -> str:

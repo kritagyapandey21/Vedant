@@ -469,9 +469,11 @@ class AsyncWebSocketClient:
             )
             logger.debug(f"Received authentication response: {auth_response}")
 
-            if auth_response.startswith('42["s_authorization"') or auth_response.startswith('451-["instruments/list"'):
-                # success by s_authorization or by server pushing instruments/list header immediately
-                if auth_response.startswith('451-["instruments/list"'):
+            pushed_instruments = auth_response.startswith('451-["instruments/list"') or auth_response.startswith('42["instruments/list"')
+            if auth_response.startswith('42["s_authorization"') or pushed_instruments:
+                # success by s_authorization or by the server pushing the instrument list immediately
+                # (the browser transport delivers binary events as '42["name",...]' text frames instead of a 451- header)
+                if pushed_instruments:
                     logger.info("Authentication successful (via instruments/list header)")
                 else:
                     logger.info("Authentication successful")
@@ -480,6 +482,8 @@ class AsyncWebSocketClient:
                     logger.debug("Sent instruments/list request")
 
                 await self._emit_event("authenticated", {})
+                if auth_response.startswith('42["instruments/list"'):
+                    await self._handle_auth_message(auth_response)   # the frame carries the data: do not drop it
 
             else:
                 # Try to parse the frame to check if it's actually an auth reject

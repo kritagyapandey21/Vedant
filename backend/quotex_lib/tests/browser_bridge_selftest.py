@@ -1,4 +1,4 @@
-"""Self-test for the Chrome WebSocket bridge (api_quotex/browser_ws.py). No Quotex account or internet needed.
+"""Self-test for the Chrome WebSocket bridge (api_quotex/browser_ws.py + the vendored browser_websocket.py). No Quotex account or internet needed.
 
 A fake Engine.IO v3 / Socket.IO server speaks the same frames as Quotex (text frames, a `451-[...]` placeholder
 followed by a binary `\\x04<json>` frame). The real AsyncWebSocketClient connects to it through a real Chrome and
@@ -24,6 +24,7 @@ PORT = 8766
 os.environ["QUOTEX_PAGE_URL"] = f"http://127.0.0.1:{PORT}/"   # same-origin start page: recent Chrome blocks about:blank -> localhost sockets
 INSTRUMENTS = [[36, "AUDCAD", "AUD/CAD", "currency", 5, 80] + [0] * 8 + [True], [66, "EURUSD_otc", "EUR/USD (OTC)", "currency", 5, 91] + [0] * 8 + [True]]
 TICKS = 40
+PUSH_INSTRUMENTS_FIRST = "--instruments-first" in sys.argv
 
 
 async def serve_page(path, request_headers):
@@ -42,9 +43,16 @@ async def fake_quotex(ws):
         elif msg == "2":
             await ws.send("3")
         elif isinstance(msg, str) and msg.startswith('42["authorization"'):
-            await ws.send('42["s_authorization",{}]')
-            await ws.send('451-["instruments/list",{"_placeholder":true,"num":0}]')
-            await ws.send(b"\x04" + json.dumps(INSTRUMENTS).encode())
+            header = '451-["instruments/list",{"_placeholder":true,"num":0}]'
+            blob = b"" + json.dumps(INSTRUMENTS).encode()
+            if PUSH_INSTRUMENTS_FIRST:           # Quotex sometimes pushes the instrument list before s_authorization
+                await ws.send(header)
+                await ws.send(blob)
+                await ws.send('42["s_authorization",{}]')
+            else:
+                await ws.send('42["s_authorization",{}]')
+                await ws.send(header)
+                await ws.send(blob)
 
             async def ticks():
                 for i in range(TICKS):
@@ -78,9 +86,6 @@ async def main() -> int:
         await client.send_message('42["echo",{"n":7}]')
         await asyncio.sleep(2.5)
         await client.disconnect()
-
-    from api_quotex.browser_ws import get_session
-    await get_session().shutdown()
 
     checks = {
         "handshake succeeded": ok,

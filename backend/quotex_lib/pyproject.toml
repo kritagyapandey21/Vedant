@@ -27,6 +27,7 @@ dependencies = [
     "rich",
     "scikit-learn",
     "scipy",
+    "undetected-chromedriver>=3.5.0",   # real-Chrome WebSocket transport (QUOTEX_TRANSPORT=browser)
 ]
 
 [project.optional-dependencies]

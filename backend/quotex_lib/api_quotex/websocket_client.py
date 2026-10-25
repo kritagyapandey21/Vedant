@@ -1,6 +1,7 @@
 """Async WebSocket client for Quotex API."""
 import asyncio
 import json
+import os
 import ssl
 import time
 import base64
@@ -22,6 +23,14 @@ from .config import Config
 logger.remove()
 log_filename = f"log-{time.strftime('%Y-%m-%d')}.txt"
 logger.add(log_filename, level="INFO", encoding="utf-8", backtrace=True, diagnose=True)
+
+# direct  : plain Python websockets (works from a home connection)
+# browser : the socket is opened inside a real Chrome (needed on servers: Cloudflare blocks Python clients, see browser_ws.py)
+# auto    : try direct first, fall back to the browser
+TRANSPORT_MODE = os.environ.get("QUOTEX_TRANSPORT", "direct").strip().lower()
+if TRANSPORT_MODE not in ("direct", "browser", "auto"):
+    TRANSPORT_MODE = "direct"
+
 
 def _now_ms() -> int:
     """Return current time in milliseconds."""
@@ -171,10 +180,21 @@ class AsyncWebSocketClient:
                     connect_kwargs["headers"] = DEFAULT_HEADERS
                     logger.warning("Using older websockets version; headers parameter may not work as expected")
 
-                self.websocket = await asyncio.wait_for(
-                    websockets.connect(**connect_kwargs),
-                    timeout=CONNECTION_SETTINGS.get("handshake_timeout", 10.0)
-                )
+                transport = TRANSPORT_MODE
+                if transport == "browser":
+                    self.websocket = await self._connect_browser(url)
+                else:
+                    try:
+                        self.websocket = await asyncio.wait_for(
+                            websockets.connect(**connect_kwargs),
+                            timeout=CONNECTION_SETTINGS.get("handshake_timeout", 10.0)
+                        )
+                    except Exception as direct_error:
+                        if transport != "auto":
+                            raise
+                        # Cloudflare answers plain Python clients with 403; a real Chrome gets through
+                        logger.warning(f"Direct WebSocket refused ({direct_error}); retrying through Chrome")
+                        self.websocket = await self._connect_browser(url)
                 region = self._extract_region_from_url(url)
                 self.connection_info = ConnectionInfo(
                     url=url,
@@ -211,6 +231,10 @@ class AsyncWebSocketClient:
                 continue
 
         raise ConnectionError("Failed to connect to any WebSocket endpoint")
+
+    async def _connect_browser(self, url: str):
+        from .browser_ws import BrowserWebSocket
+        return await BrowserWebSocket.connect(url)
 
     async def disconnect(self) -> None:
         logger.info("Disconnecting from WebSocket")

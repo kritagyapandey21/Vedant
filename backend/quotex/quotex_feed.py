@@ -107,7 +107,7 @@ class QuotexFeed:
 
     async def _login_from_session(self, force: bool) -> str:
         """Browser mode: use the saved session; on force, renew it through Chrome with the saved cookies."""
-        from api_quotex.browser_ws import build_ssid, get_session
+        from api_quotex.browser_ws import build_ssid, refresh_session
         path = self._session_file()
         try:
             saved = json.loads(path.read_text(encoding="utf-8"))
@@ -115,7 +115,7 @@ class QuotexFeed:
             saved = {}
         if force:
             self._last_login = time.time()
-            fresh = await get_session().refresh(saved["cookies"], QX_IS_DEMO) if saved.get("cookies") else None
+            fresh = await refresh_session(saved["cookies"], QX_IS_DEMO) if saved.get("cookies") else None
             if not fresh or not fresh.get("token"):
                 raise RuntimeError(f"Quotex rejected the saved session and it could not be renewed - "
                                    f"copy a fresh session.json to {path}")

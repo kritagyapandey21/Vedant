@@ -24,6 +24,9 @@ FETCH_CONCURRENCY = 6
 FETCH_TIMEOUT = 20
 MAX_FAILED_CYCLES = 2         # failed cycles before the connection is rebuilt
 RELOGIN_MIN_INTERVAL = 600    # never run the browser login more than once per 10 min
+# "browser": the server cannot log in or open the socket with plain Python (Cloudflare answers 403), so the feed
+# uses the saved session.json and a real Chrome for the socket (api_quotex/browser_ws.py). Default "direct" = as before.
+BROWSER_MODE = os.environ.get("QUOTEX_TRANSPORT", "direct").strip().lower() == "browser"
 
 
 def _prepare_environment() -> None:
@@ -99,12 +102,41 @@ class QuotexFeed:
             self._wake.set()
 
     # ------------------------------------------------------------------ session
+    def _session_file(self):
+        return QX_DATA_DIR / "sessions" / "session.json"
+
+    async def _login_from_session(self, force: bool) -> str:
+        """Browser mode: use the saved session; on force, renew it through Chrome with the saved cookies."""
+        from api_quotex.browser_ws import build_ssid, get_session
+        path = self._session_file()
+        try:
+            saved = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            saved = {}
+        if force:
+            self._last_login = time.time()
+            fresh = await get_session().refresh(saved["cookies"], QX_IS_DEMO) if saved.get("cookies") else None
+            if not fresh or not fresh.get("token"):
+                raise RuntimeError(f"Quotex rejected the saved session and it could not be renewed - "
+                                   f"copy a fresh session.json to {path}")
+            saved.update({k: v for k, v in fresh.items() if v})
+            saved["ssid"] = build_ssid(saved["token"], QX_IS_DEMO)
+            saved["is_demo"] = QX_IS_DEMO
+            path.write_text(json.dumps(saved, indent=4), encoding="utf-8")
+            os.chmod(path, 0o600)
+            logger.info("Quotex session renewed through Chrome")
+        if not saved.get("ssid"):
+            raise RuntimeError(f"no Quotex session found - copy session.json to {path}")
+        return saved["ssid"]
+
     async def _login(self, force: bool = False) -> str:
         """Return an SSID. force=True discards the saved session first.
 
         api_quotex's validate_ssid() only checks the handshake, so an expired session still "validates";
         the only reliable test is a real connect, hence the explicit force path.
         """
+        if BROWSER_MODE:
+            return await self._login_from_session(force)
         from api_quotex.login import get_ssid
         session_file = QX_DATA_DIR / "sessions" / "session.json"
         if force and session_file.exists():

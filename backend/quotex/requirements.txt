@@ -7,4 +7,6 @@ numpy>=2.0.0
 tzdata>=2025.2
 # Quotex client (async websocket + Playwright login): install from the sibling checkout
 -e ../quotex_lib
+# real Chrome for the Quotex socket on servers (Cloudflare blocks Python clients)
+undetected-chromedriver>=3.5.0
 anthropic>=0.50.0

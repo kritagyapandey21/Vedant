@@ -77,13 +77,16 @@ sudo -u tsignal /opt/tradingsignal/venv/bin/pip install -r pocketoption/requirem
 sudo -u tsignal /opt/tradingsignal/venv/bin/pip install -r quotex/requirements.txt
 ```
 
-Quotex signs in through a headless browser. Install it for the `tsignal` user only (skip this if you only run Pocket Option):
+Quotex sits behind Cloudflare, which blocks every Python connection from a server (HTTP 403) and even Playwright's
+Chromium. The only thing that gets through is a **real Chrome** on a virtual screen, so the Quotex backend opens its
+socket from JavaScript inside Chrome (see `backend/quotex_lib/api_quotex/browser_ws.py`, background in
+`tackle.md` in your quotex-api repo). Install Chrome for Testing, its driver and the virtual screen. Skip this if you only run Pocket Option:
 
 ```bash
-sudo -u tsignal PLAYWRIGHT_BROWSERS_PATH=/opt/tradingsignal/browsers /opt/tradingsignal/venv/bin/playwright install chromium
-/opt/tradingsignal/venv/bin/playwright install-deps chromium     # adds system libraries (apt packages); safe, additive
-apt install -y xvfb xauth       # virtual screen: the Quotex login opens a real (non-headless) browser
+bash /opt/tradingsignal/backend/deploy/install_quotex_browser.sh
 ```
+
+It only adds missing apt packages and puts Chrome in `/opt/tradingsignal/browsers/cft`.
 
 ## 5. Secrets (`.env` files, never committed)
 
@@ -211,9 +214,11 @@ Then delete the `signals` A record in the domain account. Nothing else on the se
 
 ## Known limits to expect
 
-- **Quotex from a VPS:** Quotex may challenge or block logins from datacenter IPs (captcha, PIN, region). If the feed
-  stays on "connecting", log in on your own PC, copy `backend/quotex_lib/sessions/session.json` to
-  `/opt/tradingsignal/backend/quotex/qx_data/sessions/` on the server, and `chown tsignal` it. It expires after a while.
+- **Quotex on a server:** the server cannot log in with email and password (Cloudflare 403, and Quotex emails a code on a
+  new device). Instead the service uses a `session.json` that was created on your own PC and copied to
+  `/opt/tradingsignal/backend/quotex/qx_data/sessions/session.json` (owned by `tsignal`, mode 600). When Quotex rejects
+  it, the service tries to renew it through Chrome using the cookies stored in that file. If renewal fails, the log says
+  "copy a fresh session.json" and you repeat the copy. Use a **demo** session only.
 - **Quotex rate limit:** restarting the Quotex service often triggers HTTP 429. Restart it rarely.
 - **Pocket Option:** needs a valid `LO_UID` token; tokens expire and must be replaced.
 - **Memory:** the Quotex service plus headless Chromium needs roughly 600-900 MB at login time. If the VPS is already tight,

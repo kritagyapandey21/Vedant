@@ -21,7 +21,7 @@ SIGN_IN = """<html><body><div id="tab-1"><form action="/en/sign-in/" method="pos
 <input type="hidden" name="_token" value="csrf"><input name="email" type="email"><input name="password" type="password">
 <button class="btn">Sign in</button></form></div></body></html>"""
 CODE_PAGE = """<html><head><title>Confirm it is you</title></head><body><p>We sent a PIN code to your email</p>
-<form action="/en/sign-in/code/" method="post"><input name="code" type="text" placeholder="PIN code"><button class="btn">Continue</button></form></body></html>"""
+<form action="/en/sign-in/code/" method="post"><input name="code" type="text" placeholder="PIN code"><button type="button" onclick="document.title='RESENT'">Resend PIN-code</button><button class="btn">Sign in</button></form></body></html>"""
 TRADE = """<html><body><script>window.settings = {"token":"TOK123","csrf":"c"};</script>trading</body></html>"""
 
 
@@ -59,29 +59,46 @@ class Mock(http.server.BaseHTTPRequestHandler):
         self._send("not found", 404)
 
 
+def run_case(use_file: bool):
+    """One run of the tool: the code typed on stdin, or (stdin closed, like a piped terminal) read from a file."""
+    out = os.path.join(tempfile.mkdtemp(), "session.json")
+    code_file = os.path.join(tempfile.mkdtemp(), "pin.txt")
+    env = dict(os.environ, QX_EMAIL="me@example.com", QX_PASSWORD="secret", QUOTEX_BROWSER_HEADLESS="1", PYTHONIOENCODING="utf-8")
+    cmd = [sys.executable, "-W", "ignore", TOOL, "--out", out, "--base-url", f"http://127.0.0.1:{PORT}",
+           "--timeout", "120", "--code-file", code_file]
+    if use_file:
+        threading.Timer(25, lambda: open(code_file, "w").write(GOOD_CODE + chr(10))).start()   # the "user" writes the code later
+        proc = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, env=env, timeout=300)
+    else:
+        proc = subprocess.run(cmd, input=GOOD_CODE + chr(10), capture_output=True, text=True, env=env, timeout=300)
+    saved = json.load(open(out, encoding="utf-8")) if os.path.exists(out) else {}
+    return proc, saved
+
+
 def main() -> int:
     server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Mock)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    out = os.path.join(tempfile.mkdtemp(), "session.json")
-    env = dict(os.environ, QX_EMAIL="me@example.com", QX_PASSWORD="secret", QUOTEX_BROWSER_HEADLESS="1", PYTHONIOENCODING="utf-8")
-    proc = subprocess.run([sys.executable, "-W", "ignore", TOOL, "--out", out, "--base-url", f"http://127.0.0.1:{PORT}", "--timeout", "90"],
-                          input=GOOD_CODE + "\n", capture_output=True, text=True, env=env, timeout=240)
-    print(proc.stdout.strip()[-900:])
-    if proc.stderr.strip():
-        print("stderr:", proc.stderr.strip()[-400:])
-    saved = json.load(open(out, encoding="utf-8")) if os.path.exists(out) else {}
-    checks = {
-        "tool exited 0": proc.returncode == 0,
-        "asked for the emailed code": "Enter the code" in proc.stdout,
-        "token captured from the trade page": saved.get("token") == "TOK123",
-        "ssid built from the token": '"session":"TOK123"' in saved.get("ssid", ""),
-        "account cookies saved": "laravel_session=SESS1" in saved.get("cookies", "") and "remember_web_x=REM1" in saved.get("cookies", ""),
-        "password never printed": "secret" not in proc.stdout,
-    }
-    for name, passed in checks.items():
-        print(("PASS  " if passed else "FAIL  ") + name)
+    ok = True
+    for use_file in (False, True):
+        proc, saved = run_case(use_file)
+        print(f"=== code {'from a file (stdin closed)' if use_file else 'typed on stdin'}")
+        print(proc.stdout.strip()[-700:])
+        if proc.stderr.strip():
+            print("stderr:", proc.stderr.strip()[-300:])
+        checks = {
+            "tool exited 0": proc.returncode == 0,
+            "asked for the emailed code": "Quotex is asking for a code" in proc.stdout,
+            "token captured from the trade page": saved.get("token") == "TOK123",
+            "ssid built from the token": '"session":"TOK123"' in saved.get("ssid", ""),
+            "account cookies saved": "laravel_session=SESS1" in saved.get("cookies", "") and "remember_web_x=REM1" in saved.get("cookies", ""),
+            "clicked Sign in, never Resend": "Clicking: Resend" not in proc.stdout and "Clicking: Sign in" in proc.stdout,
+            "password never printed": "secret" not in proc.stdout,
+        }
+        for name, passed in checks.items():
+            print(("PASS  " if passed else "FAIL  ") + name)
+        ok = ok and all(checks.values())
     server.shutdown()
-    return 0 if all(checks.values()) else 1
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

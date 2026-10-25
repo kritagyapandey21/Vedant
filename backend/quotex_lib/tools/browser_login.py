@@ -80,19 +80,26 @@ def submit_form_of(driver, field, still_here) -> None:
     still_here() tells whether the page is still waiting on this form."""
     from selenium.webdriver.common.by import By
     from selenium.webdriver.common.keys import Keys
-    clicked = False
-    for xpath in ("./ancestor::form//button[@type='submit']", "./ancestor::form//input[@type='submit']",
-                  "./ancestor::form//button", "./ancestor::form//*[@role='button']"):
+    avoid = re.compile(r"resend|back|cancel|forgot|google|facebook|apple", re.I)
+    prefer = re.compile(r"sign.?in|log.?in|continue|confirm|submit|verify|next", re.I)
+    candidates = []
+    for xpath in ("./ancestor::form//button", "./ancestor::form//input[@type='submit']", "./ancestor::form//*[@role='button']"):
         try:
             for btn in field.find_elements(By.XPATH, xpath):
-                if btn.is_displayed() and btn.is_enabled():
-                    btn.click()
-                    clicked = True
-                    break
+                label = (btn.text or btn.get_attribute("value") or "").strip()
+                if btn.is_displayed() and btn.is_enabled() and not avoid.search(label):
+                    candidates.append((0 if (prefer.search(label) or (btn.get_attribute("type") or "") == "submit") else 1, btn, label))
         except Exception:
             pass
-        if clicked:
+    clicked = False
+    for _, btn, label in sorted(candidates, key=lambda c: c[0]):
+        try:
+            say(f"Clicking: {label or '(unlabelled button)'}")
+            btn.click()
+            clicked = True
             break
+        except Exception:
+            continue
     time.sleep(3)
     try:
         waiting = still_here()
@@ -103,6 +110,29 @@ def submit_form_of(driver, field, still_here) -> None:
             driver.execute_script("const f = arguments[0].form; if (f) { f.requestSubmit ? f.requestSubmit() : f.submit(); }", field)
         except Exception:
             field.send_keys(Keys.ENTER)
+
+
+def read_code(path: str, deadline: float) -> str:
+    """The emailed code: typed in the terminal if that works, otherwise read from a file (echo 123456 > FILE)."""
+    try:
+        return input("Enter the code: ").strip()
+    except (OSError, EOFError):
+        pass
+    say(f"Waiting for the code: run   echo YOURCODE > {path}   in another terminal or tab (or as root on this server).")
+    while time.time() < deadline:
+        try:
+            with open(path, encoding="utf-8") as f:
+                code = f.read().strip()
+        except OSError:
+            code = ""
+        if code:
+            try:
+                os.remove(path)                   # one-time code: do not leave it behind
+            except OSError:
+                pass
+            return code
+        time.sleep(1)
+    return ""
 
 
 def wait_for_cloudflare(driver, seconds: float = 40) -> bool:
@@ -161,6 +191,10 @@ def login(args) -> Optional[Dict[str, Any]]:
         pwd_box = form.find_element(By.CSS_SELECTOR, 'input[name="password"]')
         submit_form_of(driver, pwd_box, lambda: pwd_box.is_displayed() and not LOGGED_IN.search(driver.current_url or ""))
 
+        try:
+            os.remove(args.code_file)             # a code left over from an earlier attempt is stale
+        except OSError:
+            pass
         deadline = time.time() + args.timeout
         asked = 0
         ticks = 0
@@ -174,7 +208,9 @@ def login(args) -> Optional[Dict[str, Any]]:
             box = visible_code_input(driver)
             if box is not None and asked < 3:
                 say("Quotex is asking for a code (it was emailed to you). " + page_hint(driver))
-                code = input("Enter the code: ").strip()
+                code = read_code(args.code_file, deadline)
+                if not code:
+                    break
                 asked += 1
                 type_into(driver, box, code)
                 submit_form_of(driver, box, lambda: box.is_displayed() and not LOGGED_IN.search(driver.current_url or ""))
@@ -220,10 +256,14 @@ def main() -> int:
     ap.add_argument("--live", dest="demo", action="store_false", help="use the real-money account (default: demo)")
     ap.add_argument("--lang", default="en")
     ap.add_argument("--base-url", default="https://quotex.com")
-    ap.add_argument("--timeout", type=float, default=300, help="seconds to wait for the login (including typing the code)")
+    ap.add_argument("--timeout", type=float, default=600, help="seconds to wait for the login (including the code)")
+    ap.add_argument("--code-file", help="file to read the emailed code from when the terminal cannot be typed in "
+                                        "(default: pin.txt next to --out, a folder the tool's user owns)")
     ap.set_defaults(demo=True)
     args = ap.parse_args()
 
+    if not args.code_file:
+        args.code_file = os.path.join(os.path.dirname(os.path.abspath(args.out)), "pin.txt")
     data = login(args)
     if not data:
         return 1

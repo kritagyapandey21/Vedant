@@ -74,25 +74,35 @@ def type_into(driver, el, text: str) -> None:
             el, text)
 
 
-def submit_code_form(driver, box) -> None:
-    """Submit the form holding the code box. Clicking is tried first; if the page did not react (clicks and Enter were
-    ignored on this page in some headless setups), submit the form directly."""
+def submit_form_of(driver, field, still_here) -> None:
+    """Submit the form that holds `field`. The button is found by structure, not by type (Quotex's is not type=submit);
+    if the page does not react (clicks and Enter are ignored on some headless pages) the form is submitted directly.
+    still_here() tells whether the page is still waiting on this form."""
     from selenium.webdriver.common.by import By
     from selenium.webdriver.common.keys import Keys
-    try:
-        box.find_element(By.XPATH, "./ancestor::form//*[self::button or (self::input and @type='submit')]").click()
-    except Exception:
-        pass
+    clicked = False
+    for xpath in ("./ancestor::form//button[@type='submit']", "./ancestor::form//input[@type='submit']",
+                  "./ancestor::form//button", "./ancestor::form//*[@role='button']"):
+        try:
+            for btn in field.find_elements(By.XPATH, xpath):
+                if btn.is_displayed() and btn.is_enabled():
+                    btn.click()
+                    clicked = True
+                    break
+        except Exception:
+            pass
+        if clicked:
+            break
     time.sleep(3)
     try:
-        still_there = box.is_displayed() and LOGGED_IN.search(driver.current_url or "") is None
+        waiting = still_here()
     except Exception:
-        still_there = False            # the old page is gone: the click worked
-    if still_there:
+        waiting = False                    # the old page is gone: it worked
+    if waiting:
         try:
-            driver.execute_script("const f = arguments[0].form; if (f) { f.requestSubmit ? f.requestSubmit() : f.submit(); }", box)
+            driver.execute_script("const f = arguments[0].form; if (f) { f.requestSubmit ? f.requestSubmit() : f.submit(); }", field)
         except Exception:
-            box.send_keys(Keys.ENTER)
+            field.send_keys(Keys.ENTER)
 
 
 def wait_for_cloudflare(driver, seconds: float = 40) -> bool:
@@ -144,13 +154,21 @@ def login(args) -> Optional[Dict[str, Any]]:
         form = driver.find_element(By.CSS_SELECTOR, FORM)
         type_into(driver, form.find_element(By.CSS_SELECTOR, 'input[name="email"]'), email)
         type_into(driver, form.find_element(By.CSS_SELECTOR, 'input[name="password"]'), password)
+        say("Sign-in form: " + ", ".join(
+            f"<{e.tag_name} {e.get_attribute('type') or ''} {e.get_attribute('name') or ''}>"
+            for e in form.find_elements(By.CSS_SELECTOR, "input, button, [role=button]")))
         say("Credentials entered, signing in ...")
-        form.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
+        pwd_box = form.find_element(By.CSS_SELECTOR, 'input[name="password"]')
+        submit_form_of(driver, pwd_box, lambda: pwd_box.is_displayed() and not LOGGED_IN.search(driver.current_url or ""))
 
         deadline = time.time() + args.timeout
         asked = 0
+        ticks = 0
         while time.time() < deadline:
             time.sleep(2)
+            ticks += 1
+            if ticks % 8 == 0:
+                say("Waiting ... " + page_hint(driver))
             if LOGGED_IN.search(driver.current_url or ""):
                 break
             box = visible_code_input(driver)
@@ -159,7 +177,7 @@ def login(args) -> Optional[Dict[str, Any]]:
                 code = input("Enter the code: ").strip()
                 asked += 1
                 type_into(driver, box, code)
-                submit_code_form(driver, box)
+                submit_form_of(driver, box, lambda: box.is_displayed() and not LOGGED_IN.search(driver.current_url or ""))
                 time.sleep(4)
                 say("After sending the code: " + page_hint(driver))
         else:

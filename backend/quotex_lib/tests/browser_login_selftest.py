@@ -19,9 +19,9 @@ GOOD_CODE = "123456"
 
 SIGN_IN = """<html><body><div id="tab-1"><form action="/en/sign-in/" method="post">
 <input type="hidden" name="_token" value="csrf"><input name="email" type="email"><input name="password" type="password">
-<button type="submit">Sign in</button></form></div></body></html>"""
+<button class="btn">Sign in</button></form></div></body></html>"""
 CODE_PAGE = """<html><head><title>Confirm it is you</title></head><body><p>We sent a PIN code to your email</p>
-<form action="/en/sign-in/code/" method="post"><input name="code" type="text" placeholder="PIN code"><button type="submit">Continue</button></form></body></html>"""
+<form action="/en/sign-in/code/" method="post"><input name="code" type="text" placeholder="PIN code"><button class="btn">Continue</button></form></body></html>"""
 TRADE = """<html><body><script>window.settings = {"token":"TOK123","csrf":"c"};</script>trading</body></html>"""
 
 

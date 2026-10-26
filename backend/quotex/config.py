@@ -31,6 +31,9 @@ ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
 # Empty = any non-empty ID is accepted (local/dev use).
 ACCESS_IDS = {i.strip().casefold() for i in os.environ.get("ACCESS_IDS", "").split(",") if i.strip()}
 
+# An ID that always gets in (for the admin), even when the partner bot says no. Leave empty to have none.
+BYPASS_TRADER_ID = os.environ.get("BYPASS_TRADER_ID", "").strip()
+
 # Quotex data feed
 QX_EMAIL = os.environ.get("QX_EMAIL", "")
 QX_PASSWORD = os.environ.get("QX_PASSWORD", "")

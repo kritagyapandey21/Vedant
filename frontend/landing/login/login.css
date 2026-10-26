@@ -201,3 +201,10 @@ a, button, label { touch-action: manipulation; }
     .sheet h2 { font-size: 19px; }
     .region { padding: 12px 14px; }
 }
+
+.deposit-note { margin: 12px auto 0; width: fit-content; max-width: 100%; text-align: center; font-size: 12.5px; color: var(--text-2); padding: 7px 14px; border-radius: 999px; background: rgba(76,141,255,.1); border: 1px solid rgba(120,170,255,.28); }
+.deposit-note b { color: var(--accent-2); font-weight: 700; }
+@media (max-width: 480px) { .deposit-note { font-size: 12px; padding: 6px 12px; margin-top: 10px; } }
+
+.sheet .sub { margin-bottom: 12px; }
+.sheet .deposit-note { margin: 0 0 16px; text-align: left; border-radius: 12px; }

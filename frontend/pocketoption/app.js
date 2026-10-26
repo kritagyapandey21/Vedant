@@ -154,7 +154,7 @@
         // the bars follow whichever engine produced the signal: RSI / Bollinger / Stochastic RSI, or RSI / EMA / MACD
         const v3 = s.indicator_scores && 'osc_rsi' in s.indicator_scores;
         const bars = v3 ? [['Rsi', 'osc_rsi', 'RSI'], ['Ema', 'osc_bollinger', 'BOLL'], ['Macd', 'osc_stoch_rsi', 'STOCH']]
-                        : [['Rsi', 'rsi', 'RSI'], ['Ema', 'ema', 'EMA'], ['Macd', 'macd', 'MACD']];
+                        : [['Rsi', 'rsi', 'RSI'], ['Ema', 'ema', 'BOLL'], ['Macd', 'macd', 'STOCH']];   // labels follow the Quotex terminal; the values are still this backend's rsi / ema / macd scores
         bars.forEach(([id, key, label]) => {
             const v = s.indicator_scores?.[key] ?? 0;
             $(`v${id}`).style.width = `${Math.max(0, Math.min(100, v))}%`;

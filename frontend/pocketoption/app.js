@@ -120,6 +120,7 @@
             state.signal = s;
             state.points = s.chart_candles || [];
             renderSignal();
+            if (mon.local) addLocalPair(s);
             setNotice('Call generated. Enter on the next candle open and do not chase it after the entry time.', 'ok');
             refreshFeed();
         } catch (e) {
@@ -241,6 +242,7 @@
 
     async function refreshMonitor() {
         if (mon.off) return;
+        if (mon.local) return pollPrices();
         try {
             const d = await getJSON('/monitor');
             mon.pairs = (d.pairs || []).filter(p => p.ready && p.series).slice(0, MON_ROWS);
@@ -253,12 +255,114 @@
             if (!mon.cur && mon.pairs.length) beginPair(0);
             renderQueue();
         } catch (e) {
-            if (e.status === 404) {                      // this backend has no /monitor: hide the card for good
-                mon.off = true;
-                $('monCard').hidden = true;
-                $('monCard').parentElement.classList.add('solo');
+            if (e.status === 404) {                      // this backend has no /monitor: the scope shows the pair of each signal instead
+                mon.local = true;
+                pollPrices();
             }                                            // any other error: keep the last readings on screen
         }
+    }
+    // No /monitor on this backend: build the scope's series from the 60 candles that come with each signal.
+    function rsiSeries(closes, len = 14) {
+        const out = new Array(closes.length).fill(50);
+        if (closes.length <= len) return out;
+        let g = 0, l = 0;
+        for (let i = 1; i <= len; i++) { const d = closes[i] - closes[i - 1]; if (d >= 0) g += d; else l -= d; }
+        g /= len; l /= len;
+        const at = (ag, al) => (al === 0 ? 100 : 100 - 100 / (1 + ag / al));
+        out[len] = at(g, l);
+        for (let i = len + 1; i < closes.length; i++) {
+            const d = closes[i] - closes[i - 1];
+            g = (g * (len - 1) + Math.max(d, 0)) / len; l = (l * (len - 1) + Math.max(-d, 0)) / len;
+            out[i] = at(g, l);
+        }
+        for (let i = 0; i < len; i++) out[i] = out[len];
+        return out;
+    }
+    // The scope for every pair, with no /monitor feed: the page keeps its own one-minute price history per pair from
+    // /relay-prices (the latest price of every pair, sampled once a minute while the page is open, kept in this browser),
+    // and a signal seeds its pair with the 60 candles that come with it. Pairs join the scope once they have 25 minutes.
+    const MON_MIN_POINTS = 25, MON_HIST = 60, MON_POLL_MS = 15000;
+    const monName = n => (/^[A-Z]{6}(_otc)?$/i.test(n) ? prettyPair(n) : String(n).replace(/-OTC$/i, ' (OTC)'));
+    function monHist() {
+        if (!mon.hist) {
+            mon.hist = safe(() => JSON.parse(localStorage.getItem('po_mon_hist') || '{}'), {});
+            const keep = Math.floor(Date.now() / 60000) - 90;      // forget anything older than 90 minutes
+            Object.keys(mon.hist).forEach(k => { mon.hist[k].pts = (mon.hist[k].pts || []).filter(p => p.b >= keep); });
+        }
+        return mon.hist;
+    }
+    async function pollPrices() {
+        const now = Date.now();
+        if (now - (mon.polledAt || 0) < MON_POLL_MS) return;
+        mon.polledAt = now;
+        let d;
+        try { d = await getJSON('/relay-prices'); } catch { return; }
+        const hist = monHist(), bucket = Math.floor(now / 60000);
+        Object.entries(d.prices || {}).forEach(([name, v]) => {
+            const price = Number(v.live_price ?? v.last_candle_price);
+            if (!Number.isFinite(price)) return;
+            const key = pairKey(name);
+            const h = hist[key] || (hist[key] = { name: monName(name), pts: [] });
+            const last = h.pts[h.pts.length - 1];
+            if (last && last.b === bucket) last.p = price; else h.pts.push({ b: bucket, p: price });
+            if (h.pts.length > MON_HIST) h.pts.shift();
+        });
+        safe(() => localStorage.setItem('po_mon_hist', JSON.stringify(hist)));
+        rebuildLocal();
+    }
+    // the newest unbroken run of minutes (a gap of more than 2 minutes starts a new run)
+    function trailingRun(pts) {
+        let i = pts.length - 1;
+        while (i > 0 && pts[i].b - pts[i - 1].b <= 2) i--;
+        return pts.slice(Math.max(i, 0));
+    }
+    function buildPair(h, key, run) {
+        const closes = run.map(p => p.p), rsi = rsiSeries(closes), upper = [], lower = [];
+        closes.forEach((_, i) => {
+            const w = closes.slice(Math.max(0, i - 19), i + 1), m = w.reduce((x, y) => x + y, 0) / w.length;
+            const sd = Math.sqrt(w.reduce((x, y) => x + (y - m) * (y - m), 0) / w.length);
+            upper.push(m + 2 * sd); lower.push(m - 2 * sd);
+        });
+        const n = closes.length, band = upper[n - 1] - lower[n - 1], sig = key === mon.signalKey ? h.signal : null;
+        return {
+            key, symbol: h.name, price: closes[n - 1], ready: true, local: true,
+            series: { closes, rsi, upper, lower }, rsi: rsi[n - 1], pct_b: band ? (closes[n - 1] - lower[n - 1]) / band : 0.5,
+            stoch_rsi: stochAt(rsi, n - 1), direction: sig?.direction, confidence: sig?.confidence,
+            score: sig ? (sig.direction === 'BUY' ? 1 : -1) : 0, setup: !!sig,
+        };
+    }
+    function rebuildLocal() {
+        const hist = monHist(), ready = [];
+        let longest = 0;
+        Object.entries(hist).forEach(([key, h]) => {
+            const run = trailingRun(h.pts);
+            longest = Math.max(longest, run.length);
+            if (run.length >= MON_MIN_POINTS) ready.push(buildPair(h, key, run));
+        });
+        ready.sort((x, y) => (y.key === mon.signalKey) - (x.key === mon.signalKey) || x.symbol.localeCompare(y.symbol));
+        mon.pairs = ready.slice(0, MON_ROWS);
+        mon.total = Object.keys(hist).length;
+        mon.cycle++;
+        $('monCycle').textContent = `update ${mon.cycle}`;
+        $('monCount').textContent = `${mon.total} pairs watched · ${mon.pairs.length} on the scope`;
+        $('monEmpty').hidden = mon.pairs.length > 0;
+        $('monEmpty').textContent = `Collecting live prices for the scope: ${Math.min(longest, MON_MIN_POINTS)} of ${MON_MIN_POINTS} minutes. Scan market to start with the signal pair right away.`;
+        if (mon.cur) {
+            const i = mon.pairs.findIndex(p => p.key === mon.cur.key);
+            if (i >= 0) { mon.cur = mon.pairs[i]; mon.active = i; } else mon.cur = null;
+        }
+        if (!mon.cur && mon.pairs.length) beginPair(0); else renderQueue();
+    }
+    // a signal brings 60 one-minute candles of its pair: use them right away
+    function addLocalPair(s) {
+        const cs = (s.chart_candles || []).filter(c => Number.isFinite(Number(c.close)));
+        if (cs.length < MON_MIN_POINTS) return;
+        const hist = monHist(), key = pairKey(s.pair);
+        const pts = cs.map(c => ({ b: Math.floor((c.time > 1e11 ? c.time / 1000 : c.time) / 60), p: Number(c.close) })).slice(-MON_HIST);
+        hist[key] = { name: monName(s.pair), pts, signal: { direction: s.direction, confidence: s.confidence } };
+        mon.signalKey = key;
+        mon.cur = null;                       // start on the new signal's pair
+        rebuildLocal();
     }
     function stochAt(rsi, i) {
         const w = rsi.slice(Math.max(0, i - 13), i + 1), lo = Math.min(...w), hi = Math.max(...w);
@@ -309,7 +413,8 @@
             `${n} · loading ${p.series.closes.length} candles`,
             `${n} · fitting Bollinger bands (20, 2σ)`,
             `${n} · scanning RSI(14) and Stochastic RSI`,
-            `${n} · stretch ${p.score >= 0 ? '+' : ''}${p.score.toFixed(2)} → ${p.setup ? `clean setup, leaning ${p.score >= 0 ? 'BUY' : 'SELL'}` : 'no clean setup'}`,
+            p.local ? (p.direction ? `${n} · signal ${p.direction}, confidence ${Number(p.confidence).toFixed(0)}%` : `${n} · readings only, no signal on this pair`)
+                    : `${n} · stretch ${p.score >= 0 ? '+' : ''}${p.score.toFixed(2)} → ${p.setup ? `clean setup, leaning ${p.score >= 0 ? 'BUY' : 'SELL'}` : 'no clean setup'}`,
         ][phase];
     }
 
@@ -317,7 +422,7 @@
         mon.raf = requestAnimationFrame(frame);
         if (mon.off || state.user === null || $('deskView').hidden) return;
         const cv = $('monCanvas'), p = mon.cur;
-        if (!cv || !p) { if (!p) $('monLine').textContent = mon.total ? 'Waiting for candles…' : 'Connecting to the market feed…'; return; }
+        if (!cv || !p) { if (!p) $('monLine').textContent = mon.local ? 'Collecting live prices for every pair…' : mon.total ? 'Waiting for candles…' : 'Connecting to the market feed…'; return; }
 
         const dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
         if (!w || !h) return;
@@ -402,7 +507,7 @@
             setGauges(rs, pb, stochAt(s.rsi, bf), true);
         }
         if (settled) {
-            const buy = p.score >= 0, col = buy ? '#3ddc97' : '#ff6b7d';
+            const buy = p.score >= 0, col = p.local && !p.direction ? '#86adff' : buy ? '#3ddc97' : '#ff6b7d';
             const pulse = 1 + 0.35 * Math.sin(t * 6);
             if (p.setup) {
                 c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.arc(X(n - 1), Y(s.closes[n - 1]), 6 * pulse, 0, 7); c.stroke();
@@ -410,7 +515,8 @@
             c.fillStyle = col; c.beginPath(); c.arc(X(n - 1), Y(s.closes[n - 1]), 3.5, 0, 7); c.fill();
             c.strokeStyle = 'rgba(134,173,255,.9)'; c.lineWidth = 1.4; c.beginPath();
             s.rsi.forEach((v, i) => c[i ? 'lineTo' : 'moveTo'](X(i), YR(v))); c.stroke();
-            c.font = '700 12px ui-monospace, Menlo, Consolas, monospace'; c.fillStyle = p.setup ? col : '#8a92a3'; c.textAlign = 'left';
+            c.font = '700 12px ui-monospace, Menlo, Consolas, monospace'; c.fillStyle = p.setup || p.local ? col : '#8a92a3'; c.textAlign = 'left';
+            if (p.local) c.fillText(p.direction ? `${p.direction} SIGNAL · confidence ${Number(p.confidence).toFixed(0)}%` : `RSI ${p.rsi.toFixed(0)} · %B ${p.pct_b.toFixed(2)} · STOCH ${p.stoch_rsi.toFixed(2)}`, padL + 6, 18); else
             c.fillText(p.setup ? `${buy ? 'BUY' : 'SELL'} SETUP · stretch ${p.score >= 0 ? '+' : ''}${p.score.toFixed(2)}` : `NO CLEAN SETUP · stretch ${p.score >= 0 ? '+' : ''}${p.score.toFixed(2)}`, padL + 6, 18);
             setGauges(p.rsi, p.pct_b, p.stoch_rsi, false);
         }

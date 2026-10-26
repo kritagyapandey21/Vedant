@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
             <h1>Scan every open Pocket Option pair.<br>Get one clear call for the next candle.</h1>
             <ul class="story-points">
                 <li><span>01</span>Reads live Pocket Option candles and never places a trade</li>
-                <li><span>02</span>RSI, Bollinger and Stochastic RSI look for a stretched price</li>
+                <li><span>02</span>RSI, EMA and MACD vote on the direction</li>
                 <li><span>03</span>Entry and expiry shown in your own time zone</li>
             </ul>
         </div>
@@ -132,14 +132,14 @@
                 </div>
 
                 <div class="conf">
-                    <div class="timer-head"><span>Setup strength</span><b id="tConf" class="mono"></b></div>
+                    <div class="timer-head"><span id="confLabel">Confidence</span><b id="tConf" class="mono"></b></div>
                     <div class="segments" id="segments"></div>
                 </div>
 
                 <div class="votes">
                     <div class="vote"><span>RSI</span><div class="bar thin"><i id="vRsi"></i></div><b id="vRsiN" class="mono"></b></div>
-                    <div class="vote"><span>BOLL</span><div class="bar thin"><i id="vEma"></i></div><b id="vEmaN" class="mono"></b></div>
-                    <div class="vote"><span>STOCH</span><div class="bar thin"><i id="vMacd"></i></div><b id="vMacdN" class="mono"></b></div>
+                    <div class="vote"><span>EMA</span><div class="bar thin"><i id="vEma"></i></div><b id="vEmaN" class="mono"></b></div>
+                    <div class="vote"><span>MACD</span><div class="bar thin"><i id="vMacd"></i></div><b id="vMacdN" class="mono"></b></div>
                 </div>
             </div>
         </section>
@@ -151,7 +151,7 @@
         </section>
 
         <div class="lower">
-            <section class="card monitor">
+            <section id="monCard" class="card monitor">
                 <div class="card-head"><h4>AI market monitor</h4><span class="live-tag"><i></i>LIVE</span></div>
                 <div class="scope-head">
                     <div><b id="monPair" class="scope-pair">—</b><span id="monPrice" class="mono muted small"></span></div>
@@ -177,6 +177,6 @@
     </main>
 </div>
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

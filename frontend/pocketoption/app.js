@@ -45,7 +45,7 @@
             signOut(true, /another device/i.test(body.detail || ''));
             throw new Error(body.detail || 'Session expired');
         }
-        if (!res.ok) throw new Error(body.detail || `Request failed (${res.status})`);
+        if (!res.ok) { const err = new Error(body.detail || `Request failed (${res.status})`); err.status = res.status; throw err; }
         return body;
     }
 
@@ -148,11 +148,17 @@
         seg.className = `segments ${buy ? 'buy' : 'sell'}`;
         seg.textContent = '';
         for (let i = 0; i < 10; i++) { const el = document.createElement('i'); if (i < Math.round(s.confidence / 10)) el.className = 'on'; seg.appendChild(el); }
-        [['Rsi', 'osc_rsi'], ['Ema', 'osc_bollinger'], ['Macd', 'osc_stoch_rsi']].forEach(([id, key]) => {
+        // the bars follow whichever engine produced the signal: RSI / Bollinger / Stochastic RSI, or RSI / EMA / MACD
+        const v3 = s.indicator_scores && 'osc_rsi' in s.indicator_scores;
+        const bars = v3 ? [['Rsi', 'osc_rsi', 'RSI'], ['Ema', 'osc_bollinger', 'BOLL'], ['Macd', 'osc_stoch_rsi', 'STOCH']]
+                        : [['Rsi', 'rsi', 'RSI'], ['Ema', 'ema', 'EMA'], ['Macd', 'macd', 'MACD']];
+        bars.forEach(([id, key, label]) => {
             const v = s.indicator_scores?.[key] ?? 0;
             $(`v${id}`).style.width = `${Math.max(0, Math.min(100, v))}%`;
             $(`v${id}N`).textContent = Math.round(v);
+            $(`v${id}`).closest('.vote').firstElementChild.textContent = label;
         });
+        $('confLabel').textContent = v3 ? 'Setup strength' : 'Confidence';
         document.querySelectorAll('#watchlist li').forEach(li => li.classList.toggle('picked', pairKey(li.textContent) === pairKey(s.pair)));
         drawChart();
         renderTimer();
@@ -231,6 +237,7 @@
     const reduceMotion = () => safe(() => matchMedia('(prefers-reduced-motion: reduce)').matches, false);
 
     async function refreshMonitor() {
+        if (mon.off) return;
         try {
             const d = await getJSON('/monitor');
             mon.pairs = (d.pairs || []).filter(p => p.ready && p.series).slice(0, MON_ROWS);
@@ -242,7 +249,13 @@
             $('monEmpty').hidden = mon.pairs.length > 0;
             if (!mon.cur && mon.pairs.length) beginPair(0);
             renderQueue();
-        } catch { /* keep the last readings on screen */ }
+        } catch (e) {
+            if (e.status === 404) {                      // this backend has no /monitor: hide the card for good
+                mon.off = true;
+                $('monCard').hidden = true;
+                $('monCard').parentElement.classList.add('solo');
+            }                                            // any other error: keep the last readings on screen
+        }
     }
     function stochAt(rsi, i) {
         const w = rsi.slice(Math.max(0, i - 13), i + 1), lo = Math.min(...w), hi = Math.max(...w);
@@ -299,7 +312,7 @@
 
     function frame(ts) {
         mon.raf = requestAnimationFrame(frame);
-        if (state.user === null || $('deskView').hidden) return;
+        if (mon.off || state.user === null || $('deskView').hidden) return;
         const cv = $('monCanvas'), p = mon.cur;
         if (!cv || !p) { if (!p) $('monLine').textContent = mon.total ? 'Waiting for candles…' : 'Connecting to the market feed…'; return; }
 

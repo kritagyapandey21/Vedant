@@ -171,6 +171,7 @@ button { cursor: pointer; }
 .empty .muted { margin-top: 6px; }
 
 .lower { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 22px; }
+.lower.solo { grid-template-columns: 1fr; }
 .card { border-radius: var(--radius); padding: 18px 20px; }
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .card-head h4 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }

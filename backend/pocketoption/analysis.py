@@ -1,6 +1,6 @@
 """
-Signal analysis module (v3-reversion-plus, see signal_v3.py and implement.md).
-Turns the engine's oscillator scores into setup strength and the final signal JSON.
+Signal analysis and confidence scoring module.
+Analyzes indicators and generates trading signals.
 """
 
 import logging
@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta, timezone
 
 IST = timezone(timedelta(hours=5, minutes=30))
-import signal_v3
-from config import MIN_CONFIDENCE_THRESHOLD
+from indicators import TechnicalIndicators
+from config import CONFIDENCE_WEIGHTS, MIN_CONFIDENCE_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -18,52 +18,107 @@ class SignalAnalyzer:
     """Analyze market data and generate trading signals."""
 
     @staticmethod
-    def analyze_pair(pair_data: Dict) -> Optional[Dict]:
+    def calculate_confidence_score(
+        rsi_signal: float,
+        ema_trend: float,
+        macd_confirmation: float,
+    ) -> float:
         """
-        Analyze a single pair with the v3-reversion-plus engine.
+        Calculate overall confidence score using weighted indicators.
 
         Args:
-            pair_data: Dictionary containing closes, symbol and current_price
+            rsi_signal: RSI signal strength (0-100)
+            ema_trend: EMA trend strength (0-100)
+            macd_confirmation: MACD confirmation strength (0-100)
 
         Returns:
-            Dictionary with analysis results, or None when the pair has no clean setup
+            Weighted confidence score (0-100)
+        """
+        confidence = (
+            (rsi_signal        * CONFIDENCE_WEIGHTS["rsi_signal"]) +
+            (ema_trend         * CONFIDENCE_WEIGHTS["ema_trend"]) +
+            (macd_confirmation * CONFIDENCE_WEIGHTS["macd_confirmation"])
+        )
+        return round(min(100, max(0, confidence)), 2)
+
+    @staticmethod
+    def determine_direction(
+        rsi_direction: Optional[str],
+        ema_direction: Optional[str],
+        macd_direction: Optional[str],
+    ) -> Optional[str]:
+        """
+        Determine final signal direction based on indicator agreement.
+
+        Args:
+            rsi_direction: RSI-based direction
+            ema_direction: EMA-based direction
+            macd_direction: MACD-based direction
+
+        Returns:
+            Final direction ("CALL" or "PUT"), or None if indicators disagree
+        """
+        directions = [rsi_direction, ema_direction, macd_direction]
+
+        call_votes = sum(1 for d in directions if d == "CALL")
+        put_votes  = sum(1 for d in directions if d == "PUT")
+
+        if call_votes > put_votes:
+            return "CALL"
+        elif put_votes > call_votes:
+            return "PUT"
+        else:
+            return None
+
+    @staticmethod
+    def analyze_pair(pair_data: Dict) -> Optional[Dict]:
+        """
+        Analyze a single trading pair and generate signal data.
+
+        Args:
+            pair_data: Dictionary containing closes and symbol
+
+        Returns:
+            Dictionary with analysis results
         """
         closes = pair_data["closes"]
         symbol = pair_data["symbol"]
 
-        if len(closes) < signal_v3.MIN_CANDLES:
-            logger.warning(f"Insufficient data for {symbol}: {len(closes)} candles (need {signal_v3.MIN_CANDLES})")
+        # Minimum 60 candles required:
+        # MACD signal line needs 26 (slow EMA) + 9 (signal EMA) = 35 candles
+        # before it produces any valid value. RSI(14) Wilder smoothing needs
+        # enough iterations to converge — 60 gives 46 iterations, well past
+        # the ~30 needed for stability.
+        if len(closes) < 60:
+            logger.warning(f"Insufficient data for {symbol}: {len(closes)} candles (need 60)")
             return None
 
-        result = signal_v3.analyze(closes)
-        if result is None:
+        signals = TechnicalIndicators.get_indicator_signals(closes)
+
+        confidence = SignalAnalyzer.calculate_confidence_score(
+            signals.get("rsi_signal", 50),
+            signals.get("ema_trend", 50),
+            signals.get("macd_confirmation", 50),
+        )
+
+        direction = SignalAnalyzer.determine_direction(
+            signals.get("rsi_direction"),
+            signals.get("ema_direction"),
+            signals.get("macd_direction"),
+        )
+
+        if direction is None:
             return None
-
-        d = result["direction"]
-        comp = result["components"]
-
-        def agree(x: float) -> float:
-            """0-100 reading of one score: above 50 supports the call."""
-            return round(max(0.0, min(100.0, 50 + 50 * x * d)), 1)
-
-        osc_rsi, osc_bb, osc_sr = agree(comp["rsi_mr"]), agree(comp["bb_mr"]), agree(comp["sr_mr"])
-        # Average of the three readings that decided the call: how stretched the price is, not a win probability.
-        confidence = round(min(99.0, (osc_rsi + osc_bb + osc_sr) / 3), 2)
 
         return {
             "symbol": symbol,
             "confidence": confidence,
-            "direction": "CALL" if d > 0 else "PUT",
+            "direction": direction,
             "price": pair_data["current_price"],
             "signals": {
-                "osc_rsi": osc_rsi,
-                "osc_bollinger": osc_bb,
-                "osc_stoch_rsi": osc_sr,
-                "rsi": agree(result["score"]),
-                "ema": agree(result["ema_stack"]),
-                "macd": agree(result["macd"]),
-                "supertrend": agree(result["supertrend"]["score"]),
-                "strength": round(result["ker"] * 100, 1),
+                "rsi":  signals.get("rsi_signal", 50),
+                "ema":  signals.get("ema_trend", 50),
+                "macd": signals.get("macd_confirmation", 50),
             }
         }
 
@@ -124,8 +179,7 @@ class SignalAnalyzer:
             "indicator_scores": best_analysis["signals"],
             "generated_at": datetime.now(IST).strftime("%H:%M:%S"),
             "generated_timestamp": datetime.now(IST).isoformat(),
-            "candle_duration": "1 minute",
-            "engine": signal_v3.ENGINE,
+            "candle_duration": "1 minute"
         }
         
         return signal

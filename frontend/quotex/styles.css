@@ -345,3 +345,52 @@ button, a, summary { touch-action: manipulation; }
     .times b { font-size: 15px; }
     .mon-meta { flex-wrap: wrap; gap: 2px 10px; }
 }
+
+/* ───────── Phone, compact: the signal and chart show without scrolling ───────── */
+@media (max-width: 520px) {
+    .rail { grid-template-columns: 1.2fr 1fr 1.1fr; grid-template-areas: "brand brand out" "user feed time"; padding: max(10px, env(safe-area-inset-top)) 14px 0; gap: 0; }
+    .rail .brand { font-size: 19px; }
+    .rail-logout { min-height: 32px; padding: 5px 14px; font-size: 13px; border-radius: 9px; }
+    .rail-user, .rail-time, .rail-feed { margin-top: 8px; padding: 8px 8px 10px; gap: 2px; }
+    .rail-user { padding-left: 0; padding-right: 8px; }
+    .rail-feed { border-left: 1px solid var(--line); padding-left: 10px; }
+    .rail-time { grid-area: time; border-left: 1px solid var(--line); padding-left: 10px; margin-top: 8px; }
+    .rail-label { font-size: 9.5px; letter-spacing: .08em; }
+    .rail-value { font-size: 14px; }
+    .who-row { gap: 4px; }
+    .eye { width: 26px; height: 26px; border-radius: 8px; }
+    .eye svg { width: 14px; height: 14px; }
+    .rail-clock { font-size: 17px; }
+    .feed strong { font-size: 13px; }
+    .rail-sub, #feedMeta { display: none; }
+
+    .stage { padding-top: 12px; padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 20px)); }
+    .stage-head { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+    .stage-head .kicker { font-size: 9.5px; letter-spacing: .1em; }
+    .stage-head h2 { font-size: 20px; }
+    .btn-scan { width: auto; min-height: 40px; padding: 0 16px; font-size: 14px; border-radius: 11px; }
+    .notice { margin: 10px 0; padding: 8px 12px; font-size: 12px; line-height: 1.45; }
+    .row1 { margin-top: 0; gap: 12px; }
+
+    .ticket-main { padding: 14px 14px 10px; }
+    .ticket-top { flex-direction: row; align-items: center; gap: 10px; flex-wrap: nowrap; }
+    .ticket-top > div:first-child { min-width: 0; }
+    .ticket-top h3 { font-size: 19px; margin: 6px 0 0; }
+    .ticket-top .muted { font-size: 12px; }
+    .chip { font-size: 9.5px; padding: 3px 8px; }
+    .call { width: auto; flex: none; min-width: 112px; grid-auto-flow: row; justify-content: center; text-align: center; padding: 8px 12px; border-radius: 12px; }
+    .call-word { font-size: 24px; }
+    .call-sub { font-size: 8.5px; margin-top: 2px; text-align: center; letter-spacing: .06em; }
+    .chart-box { height: 165px; margin-top: 10px; }
+    .chart-foot { padding-top: 6px; font-size: 10px; }
+    .times { gap: 8px; margin-top: 8px; }
+    .times div { padding: 6px 10px; border-radius: 10px; }
+    .times span { font-size: 10px; }
+    .times b { font-size: 14px; }
+    .ticket-side { padding: 14px; gap: 14px; }
+    .tl-row { padding: 9px 0; }
+    .tl-row span { font-size: 13px; }
+    .tl-row b { font-size: 15px; }
+    .tl-row.hot b { font-size: 18px; }
+    .card { padding: 14px; }
+}

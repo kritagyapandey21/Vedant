@@ -85,11 +85,6 @@ ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
 # in the private production .env file, never in source control.
 BYPASS_TRADER_ID = os.environ.get("BYPASS_TRADER_ID", "").strip()
 
-# Comma separated Trader IDs allowed to sign in (same setting as the Quotex backend).
-# When set, any other ID is refused before the Telegram check, so it also works without Telegram
-# (REQUIRE_VERIFICATION=false). Empty = no allow-list (local/dev use).
-ACCESS_IDS = {i.strip().casefold() for i in os.environ.get("ACCESS_IDS", "").split(",") if i.strip()}
-
 # Set REQUIRE_VERIFICATION=true in production so login always requires a valid
 # Telegram check. When false (default) the system fails open if Telegram is
 # unreachable — useful during initial setup.

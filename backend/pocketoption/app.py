@@ -32,12 +32,11 @@ from slowapi.errors import RateLimitExceeded
 
 from config import (
     HOST, PORT, ALLOWED_ORIGINS, ADMIN_KEY,
-    LOG_LEVEL, LOG_FORMAT, TRADING_PAIRS, BYPASS_TRADER_ID, MIN_CONFIDENCE_THRESHOLD, ACCESS_IDS
+    LOG_LEVEL, LOG_FORMAT, TRADING_PAIRS, BYPASS_TRADER_ID, MIN_CONFIDENCE_THRESHOLD
 )
 import telegram_service
 import claude_judge
 import session_auth
-import signal_v3
 from market_data import MarketDataFetcher
 from analysis import SignalAnalyzer
 from pocket_option_api import PocketOptionSessionManager, PocketOptionDataFetcher
@@ -109,7 +108,6 @@ class SignalResponse(BaseModel):
     generated_at: str
     candle_duration: str
     data_source: str
-    engine: str = ""
     chart_candles: List[Dict[str, float]] = []
     ai_review: Optional[str] = None
     entry_timestamp: str
@@ -671,37 +669,6 @@ async def get_signal(
         )
 
 
-def _monitor_inputs():
-    """(symbol, label, closes, price) for every pair the signal engine currently looks at."""
-    if current_config["data_source"] == "pocket_option" and relay_candle_cache:
-        from po_websocket import OTC_SYMBOL_MAP
-        reverse_map = {v: k for k, v in OTC_SYMBOL_MAP.items()}
-        for po_symbol, candles in relay_candle_cache.items():
-            if not _is_forex_pair(po_symbol):
-                continue
-            closes = [float(c[1]) for c in candles]
-            yield po_symbol, reverse_map.get(po_symbol, po_symbol), closes, relay_latest_prices.get(po_symbol, closes[-1] if closes else None)
-    else:
-        for asset, data in market_data_cache.items():
-            closes = [float(x) for x in data.get("closes", [])]
-            yield asset, asset, closes, data.get("current_price") or (closes[-1] if closes else None)
-
-
-@app.get("/monitor")
-async def get_monitor(_session: Optional[dict] = Depends(require_session)) -> Dict:
-    """Live per-pair oscillator readings, the same numbers the signal engine works from."""
-    pairs, closes_by_symbol = [], {}
-    for symbol, label, closes, price in _monitor_inputs():
-        snap = signal_v3.snapshot(closes)
-        closes_by_symbol[symbol] = closes
-        pairs.append({"symbol": symbol, "name": label, "price": price, "candles": len(closes), "ready": snap is not None, **(snap or {})})
-    pairs.sort(key=lambda p: abs(p.get("score", 0)), reverse=True)
-    for p in pairs[:8]:                       # chart data only for the pairs the panel will draw
-        if p["ready"]:
-            p["series"] = signal_v3.series(closes_by_symbol[p["symbol"]])
-    return {"engine": signal_v3.ENGINE, "min_candles": signal_v3.MIN_CANDLES, "pairs": pairs}
-
-
 @app.get("/data-source")
 async def get_current_data_source() -> Dict:
     """
@@ -732,8 +699,8 @@ async def get_available_pairs() -> Dict:
     if relay_candle_cache:
         return {
             "data_source": "pocket_option",
-            "assets": [s for s in relay_candle_cache if _is_forex_pair(s)],
-            "total": sum(1 for s in relay_candle_cache if _is_forex_pair(s)),
+            "assets": list(relay_candle_cache.keys()),
+            "total": len(relay_candle_cache),
         }
     asset_names = [a["name"] for a in POCKET_OPTION_ASSETS]
     return {"data_source": "pocket_option", "assets": asset_names, "total": len(asset_names)}
@@ -823,8 +790,6 @@ async def verify_trader(request: Request, payload: Dict) -> Dict:
     timezone_name = payload.get("timezone")
     if timezone_name is not None and not is_valid_timezone(timezone_name):
         raise HTTPException(status_code=400, detail="Invalid IANA timezone")
-    if ACCESS_IDS and trader_id.casefold() not in ACCESS_IDS:
-        return {"found": False, "message": "ACCESS DENIED, ID NOT AUTHORISED"}
     if BYPASS_TRADER_ID and trader_id.casefold() == BYPASS_TRADER_ID.casefold():
         result = {"found": True, "bypassed": True, "message": "TRADER VERIFIED"}
     else:

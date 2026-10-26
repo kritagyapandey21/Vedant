@@ -27,7 +27,8 @@ Ports: Pocket Option backend 8000, Quotex backend 8002, site gateway 8080.
 ## How it fits together
 - Login page verifies the ID with the chosen broker's backend and gets a signed session token (HMAC, 12 h).
   `/signal` and `/correlations` need that token. `SESSION_SECRET` should be set in each backend `.env` for stable sessions.
-- Signal = `v3-reversion-plus` (RSI, Bollinger %B and Stochastic RSI mean-reversion, see `implement.md`; same engine in both backends), top three pairs go to Claude (`backend/*/claude_judge.py`) which picks one or rejects all.
+- Signal engines: the **Quotex** backend uses `v3-reversion-plus` (RSI, Bollinger %B and Stochastic RSI mean-reversion, see `implement.md`);
+  the **Pocket Option** backend keeps its original RSI / EMA 9/21 / MACD vote. In both, the top three pairs go to Claude (`backend/*/claude_judge.py`) which picks one or rejects all.
   Needs `ANTHROPIC_API_KEY` in the backend `.env`. Without it the plain indicator ranking is used.
   `CLAUDE_JUDGE_MODEL` defaults to `claude-opus-5-5`; `claude-haiku-5-5` is faster and cheaper.
 - Quotex data is live Quotex OTC data (Quotex's own prices, not real market prices). Quotex candle history lags about 5 minutes,

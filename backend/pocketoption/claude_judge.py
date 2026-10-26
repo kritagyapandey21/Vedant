@@ -24,10 +24,8 @@ TIMEOUT = float(os.environ.get("CLAUDE_JUDGE_TIMEOUT", "25"))
 
 SYSTEM = (
     "You are a cautious reviewer for a one minute signal tool. You receive up to three shortlisted candidates, "
-    "already ranked by how stretched the price is (RSI, Bollinger %B and Stochastic RSI). Each is a mean-reversion "
-    "fade: CALL expects a bounce up after a drop, PUT expects a pullback after a rise. Pick the single cleanest "
-    "setup, or reject all of them if the recent price action is a steady trend that is unlikely to snap back, "
-    "or looks choppy. You judge setup quality only "
+    "already ranked by an RSI, EMA and MACD vote. Pick the single cleanest setup, or reject all of them if the "
+    "recent price action is choppy, already exhausted, or contradicts the indicators. You judge setup quality only "
     "and cannot predict the market. Reply with JSON only, no other text: "
     '{"pick": <candidate index or null>, "reason": "<at most 25 words>"}'
 )
@@ -43,8 +41,7 @@ def _describe(index: int, c: Dict) -> str:
     s = c.get("signals", {})
     return (
         f"[{index}] {c['symbol']} direction={c['direction']} confidence={c['confidence']} "
-        f"rsi={s.get('osc_rsi')} bollinger={s.get('osc_bollinger')} stoch_rsi={s.get('osc_stoch_rsi')} "
-        f"trend_strength={s.get('strength')}\n   last closes (oldest to newest): {series}"
+        f"rsi={s.get('rsi')} ema={s.get('ema')} macd={s.get('macd')}\n    last closes (oldest to newest): {series}"
     )
 
 

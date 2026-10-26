@@ -8,7 +8,7 @@
             label: 'Pocket Option Trader ID',
             hint: 'Forex pairs · broker candles',
             name: 'Pocket Option',
-            signup: 'https://pocketoption.com',   // replace with your own affiliate/referral link if you have one
+            signup: 'https://u3.shortink.io/register?utm_campaign=865322&utm_source=affiliate&utm_medium=sr&a=FNBPYW5IEbDHiK&al=1797097&ac=aurox_website&cid=980741&code=HAJ305',
             api: '/api',                       // AUROX backend
             terminal: '/pocketoption/',
             session: (id, token) => {          // keys read by the Pocket Option terminal
@@ -21,7 +21,13 @@
             label: 'Quotex Access ID',
             hint: 'Currency & OTC pairs · live ticks',
             name: 'Quotex',
-            signup: 'https://quotex.com',          // replace with your own affiliate/referral link if you have one
+            signup: 'https://quotex.com/sign-up/?lid=2403686',
+            regions: [                             // "Click here" offers these; each opens the registration page for that region
+                { name: 'Global', note: 'Most countries', tag: 'GLOBAL', url: 'https://quotex.com/sign-up/?lid=2403686' },
+                { name: 'Bangladesh', note: 'For traders in Bangladesh', tag: 'BD', url: 'https://market-qx.info/sign-up/?lid=2403686' },
+                { name: 'Indonesia', note: 'For traders in Indonesia', tag: 'ID', url: 'https://market-quotex.pro/sign-up/?lid=2403686' },
+                { name: 'Vietnam', note: 'For traders in Vietnam', tag: 'VN', url: 'https://market-quotex.pro/sign-up/?lid=2403686' },
+            ],
             api: '/quotex-api',                // Quotex backend
             terminal: '/quotex/',
             session: (id, token) => {          // keys read by the Quotex terminal
@@ -51,6 +57,41 @@
         $('pick').hidden = form; $('form').hidden = !form;
         if (form) $('idInput').focus();
     }
+    // ───── sign-up: brokers with regional links open a small chooser, the others go straight to their site ─────
+    let lastFocus = null;
+    function openRegions() {
+        const cfg = BROKERS[state.broker];
+        $('regionBroker').textContent = cfg.name;
+        const list = $('regionList');
+        list.textContent = '';
+        cfg.regions.forEach(r => {
+            const a = document.createElement('a');
+            a.className = 'region'; a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+            a.innerHTML = '<span class="r-tag"></span><span class="r-text"><b></b><small></small></span>'
+                + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+            a.querySelector('.r-tag').textContent = r.tag;
+            a.querySelector('b').textContent = r.name;
+            a.querySelector('small').textContent = r.note;
+            a.addEventListener('click', closeRegions);
+            list.appendChild(a);
+        });
+        lastFocus = document.activeElement;
+        $('regionOverlay').hidden = false;
+        list.querySelector('a')?.focus();
+    }
+    function closeRegions() {
+        $('regionOverlay').hidden = true;
+        lastFocus?.focus?.();
+    }
+    $('signupLink').addEventListener('click', e => {
+        if (!BROKERS[state.broker].regions) return;           // plain link
+        e.preventDefault();
+        openRegions();
+    });
+    $('regionClose').addEventListener('click', closeRegions);
+    $('regionOverlay').addEventListener('click', e => { if (e.target === $('regionOverlay')) closeRegions(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('regionOverlay').hidden) closeRegions(); });
+
     document.querySelectorAll('.tcard').forEach(c => c.addEventListener('click', () => { setBroker(c.dataset.broker); show(''); showScreen(true); }));
     $('changeBroker').addEventListener('click', () => { show(''); showScreen(false); });
 

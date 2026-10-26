@@ -4,7 +4,8 @@ Sends the trader ID to the Quotex partner bot (@quotexpartnerbot) and reads the 
 Requires TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_SESSION_STRING in this folder's .env, and REQUIRE_VERIFICATION=true.
 
   QUOTEX_BOT_USERNAME    bot to ask, default quotexpartnerbot
-  QUOTEX_MIN_DEPOSIT     minimum total deposits in USD, 0 (default) = do not check deposits
+  QUOTEX_MIN_DEPOSIT     minimum "Deposits Sum" in USD, default 49 (0 = do not check)
+  QUOTEX_MIN_BALANCE     minimum "Balance" as the bot shows it (in the trader's own currency), default 5 (0 = do not check)
 """
 
 import asyncio
@@ -24,7 +25,8 @@ API_ID = int(os.environ.get("TELEGRAM_API_ID", "0") or "0")
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "")
 SESSION_STRING = os.environ.get("TELEGRAM_SESSION_STRING", "")
 BOT_USERNAME = os.environ.get("QUOTEX_BOT_USERNAME", "quotexpartnerbot").lstrip("@")
-MIN_DEPOSIT = float(os.environ.get("QUOTEX_MIN_DEPOSIT", "0") or "0")
+MIN_DEPOSIT = float(os.environ.get("QUOTEX_MIN_DEPOSIT", "49") or "0")
+MIN_BALANCE = float(os.environ.get("QUOTEX_MIN_BALANCE", "5") or "0")
 
 # When True, login is blocked instead of bypassed if Telegram is not configured.
 _REQUIRE_VERIFICATION = os.environ.get("REQUIRE_VERIFICATION", "false").lower() == "true"
@@ -59,23 +61,34 @@ async def _get_client():
     return _client
 
 
+def _amount(text: str, label: str):
+    """The number on the bot's "<label>: $ 100.00" line (label at the start of a line, so 'Bonuses Sum' never matches 'Deposits Sum')."""
+    m = re.search(rf"^[ \t]*{label}[ \t]*:[^\d\n-]*(-?[\d,]+\.?\d*)", text, re.IGNORECASE | re.MULTILINE)
+    return float(m.group(1).replace(",", "")) if m else None
+
+
 def _parse_reply(text: str, trader_id: str) -> Dict:
-    """Read the partner bot's answer: the ID must be reported back, and (if QUOTEX_MIN_DEPOSIT is set) deposits must reach it."""
+    """Read the partner bot's answer (Trader # ..., Balance: ..., Deposits Sum: ...). Needs Deposits Sum >= MIN_DEPOSIT and Balance >= MIN_BALANCE."""
     if not text:
         return {"found": False, "message": "NO RESPONSE FROM BOT"}
     low = text.lower()
     if any(p in low for p in _NOT_FOUND):
         return {"found": False, "message": "TRADER NOT FOUND"}
-    if str(trader_id).lower() not in low and "uid" not in low and "id:" not in low:
+    if str(trader_id).lower() not in low and "trader #" not in low:
         return {"found": False, "message": "UNRECOGNISED RESPONSE"}
 
     if MIN_DEPOSIT > 0:
-        match = re.search(r"deposits?[^\d$\n]*\$?\s*([\d,]+\.?\d*)", text, re.IGNORECASE)
-        if not match:
+        deposits = _amount(text, "deposits sum")
+        if deposits is None:
             return {"found": False, "message": "COULD NOT VERIFY DEPOSIT HISTORY"}
-        total = float(match.group(1).replace(",", ""))
-        if total < MIN_DEPOSIT:
-            return {"found": False, "message": f"ACCESS DENIED, MINIMUM ${MIN_DEPOSIT:g} DEPOSIT REQUIRED (yours: ${total:.2f})"}
+        if deposits < MIN_DEPOSIT:
+            return {"found": False, "message": f"ACCESS DENIED, MINIMUM ${MIN_DEPOSIT:g} IN DEPOSITS REQUIRED (yours: ${deposits:.2f})"}
+    if MIN_BALANCE > 0:
+        balance = _amount(text, "balance")
+        if balance is None:
+            return {"found": False, "message": "COULD NOT VERIFY BALANCE"}
+        if balance < MIN_BALANCE:
+            return {"found": False, "message": f"ACCESS DENIED, MINIMUM BALANCE OF {MIN_BALANCE:g} REQUIRED (yours: {balance:.2f})"}
     return {"found": True, "message": "TRADER VERIFIED"}
 
 
@@ -108,7 +121,7 @@ async def verify_trader(trader_id: str) -> Dict:
                         nxt = await conv.get_response(timeout=10)
                         nxt_raw = nxt.message or ""
                         logger.info(f"Post-captcha reply: {nxt_raw[:200]!r}")
-                        if str(trader_id).lower() in nxt_raw.lower() or "uid" in nxt_raw.lower():
+                        if str(trader_id).lower() in nxt_raw.lower() or "trader #" in nxt_raw.lower():
                             raw = nxt_raw
                         else:
                             await asyncio.sleep(1)

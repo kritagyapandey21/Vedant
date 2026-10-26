@@ -134,6 +134,7 @@
         const s = state.signal;
         $('empty').hidden = true;
         $('ticket').hidden = false;
+        $('ticketSide').hidden = false;
         const buy = s.direction === 'BUY';
         $('tPair').textContent = s.pair;
         $('tPrice').textContent = Number(s.current_price).toFixed(decimals(s.current_price));
@@ -143,6 +144,8 @@
         $('tGen').textContent = fmtTime(Date.parse(s.generated_timestamp));
         $('tEntry').textContent = fmtTime(Date.parse(s.entry_timestamp));
         $('tExpiry').textContent = fmtTime(Date.parse(s.expiry_timestamp));
+        $('tEntry2').textContent = $('tEntry').textContent;
+        $('tExpiry2').textContent = $('tExpiry').textContent;
         $('tConf').textContent = `${s.confidence.toFixed(1)}%`;
         const seg = $('segments');
         seg.className = `segments ${buy ? 'buy' : 'sell'}`;
@@ -479,7 +482,7 @@
         const saved = safe(() => localStorage.getItem(`aurox_timezone_${id.toUpperCase()}`));
         if (saved) state.tz = saved;
         $('loginView').hidden = true; $('deskView').hidden = false;
-        $('who').textContent = id.toUpperCase();
+        showWho();
         $('tzName').textContent = state.tz.split('/').pop().replace(/_/g, ' ');
         syncTime().then(tickClock);
         refreshFeed(); refreshCorrelations(); refreshMonitor(); startMonitor();
@@ -501,18 +504,40 @@
         safe(() => sessionStorage.removeItem(KEY_TOKEN));
         if (location.pathname.startsWith('/pocketoption/')) { location.replace('/login/?broker=pocket' + (otherDevice ? '&other_device=1' : expired ? '&expired=1' : '')); return; }
         state.signal = null; state.points = [];
-        $('ticket').hidden = true; $('empty').hidden = false;
+        $('ticket').hidden = true; $('ticketSide').hidden = true; $('empty').hidden = false;
         $('deskView').hidden = true; $('loginView').hidden = false;
         $('loginError').textContent = otherDevice ? 'Signed out: this ID was used to sign in on another device.' : expired ? 'Signed out after 30 minutes of inactivity.' : '';
         $('idInput').value = ''; $('idInput').focus();
     }
     function armIdle() { clearTimeout(state.idle); state.idle = setTimeout(() => signOut(true), IDLE_MS); }
 
+    // ───────── trader ID mask ─────────
+    // the ID can be hidden completely (••••••••) for screenshots or screen sharing; the choice is remembered on this device
+    const masked = () => safe(() => localStorage.getItem('po_mask_id'), '0') === '1';
+    function maskId(id) { return '•'.repeat(id.length); }
+    function showWho() {
+        const id = (state.user || '').toUpperCase(), on = masked();
+        $('who').textContent = on ? maskId(id) : id;
+        $('maskBtn').setAttribute('aria-pressed', String(on));
+        const label = on ? 'Show trader ID' : 'Hide trader ID';
+        $('maskBtn').setAttribute('aria-label', label); $('maskBtn').title = label;
+    }
+
     // ───────── boot ─────────
     function init() {
         $('loginForm').addEventListener('submit', signIn);
         $('scanBtn').addEventListener('click', scan);
         $('logoutBtn').addEventListener('click', () => signOut(false));
+        $('maskBtn').addEventListener('click', () => { safe(() => localStorage.setItem('po_mask_id', masked() ? '0' : '1')); showWho(); });
+        // side panel: hide / show on wide screens, remembered between visits (phones always show it)
+        const setRail = hidden => {
+            $('deskView').classList.toggle('rail-hidden', hidden);
+            $('railOpen').hidden = !hidden;
+            safe(() => localStorage.setItem('po_rail_hidden', hidden ? '1' : '0'));
+        };
+        $('railClose').addEventListener('click', () => setRail(true));
+        $('railOpen').addEventListener('click', () => setRail(false));
+        setRail(safe(() => localStorage.getItem('po_rail_hidden'), '0') === '1');
         $('tzTrigger').addEventListener('click', () => {
             const m = $('tzMenu'); m.hidden = !m.hidden;
             $('tzTrigger').setAttribute('aria-expanded', String(!m.hidden));

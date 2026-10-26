@@ -81,11 +81,26 @@ button { cursor: pointer; }
 
 /* ───────── Desk ───────── */
 .desk { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; }
+.rail-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rail-toggle, .rail-open { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line-2); background: rgba(255,255,255,.04); color: var(--ink-2); cursor: pointer; padding: 0; transition: border-color .2s, color .2s, background .2s; }
+.rail-toggle:hover, .rail-open:hover { border-color: rgba(255,255,255,.35); color: #fff; background: rgba(255,255,255,.08); }
+.rail-toggle svg, .rail-open svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rail-open { position: fixed; top: 22px; left: 18px; z-index: 20; width: 34px; height: 34px; background: rgba(14,15,19,.85); }
+.desk.rail-hidden { grid-template-columns: 1fr; }
+.desk.rail-hidden .rail { display: none; }
+.desk.rail-hidden .stage { padding-left: 64px; margin: 0 auto; }
 .rail { background: var(--rail); border-right: 1px solid var(--line); color: var(--ink); padding: 24px 20px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 0; height: 100vh; }
 .rail-block { display: grid; gap: 4px; }
 .rail-block.grow { flex: 1; min-height: 0; grid-template-rows: auto 1fr; }
 .rail-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .rail-label em { font-style: normal; color: var(--ink-2); }
+.who-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.eye { display: grid; place-items: center; flex: none; width: 30px; height: 30px; padding: 0; border-radius: 9px; border: 1px solid var(--line-2); background: rgba(255,255,255,.04); color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
+.eye:hover { border-color: rgba(255,255,255,.35); color: #fff; }
+.eye svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.eye .eye-off { display: none; }
+.eye[aria-pressed="true"] .eye-on { display: none; }
+.eye[aria-pressed="true"] .eye-off { display: block; }
 .rail-value { font-size: 16px; word-break: break-all; font-weight: 500; }
 .rail-clock { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: -.02em; }
 .rail-sub { color: var(--muted); font-size: 12px; }
@@ -138,6 +153,11 @@ button { cursor: pointer; }
 .chart-box { position: relative; height: 240px; margin-top: 18px; }
 .chart-box canvas { width: 100%; height: 100%; display: block; }
 .tip { position: absolute; pointer-events: none; transform: translate(-50%, -100%); background: #f3f5f9; color: #0a0b0e; font-family: var(--mono); font-size: 11.5px; padding: 5px 8px; border-radius: 7px; white-space: nowrap; }
+.times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.times div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.times span { font-size: 12px; color: var(--muted); }
+.times b { font-size: 16px; font-weight: 600; }
+.times div:first-child b { color: var(--accent-2); }
 .chart-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); padding-top: 8px; }
 
 .ticket-side { border-left: 1px solid var(--line); padding: 26px 24px; display: grid; gap: 22px; align-content: start; background: rgba(255,255,255,.02); }
@@ -170,8 +190,16 @@ button { cursor: pointer; }
 @keyframes bob { 50% { transform: scaleY(.7); } }
 .empty .muted { margin-top: 6px; }
 
-.lower { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; margin-top: 22px; }
-.lower.solo { grid-template-columns: 1fr; }
+.row1 { margin-top: 18px; display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: stretch; }
+.row1 > * { min-width: 0; }
+.row1.solo { grid-template-columns: 1fr; }          /* backend without /monitor: the chart card takes the whole row */
+.ticket.solo, .ticket.side-only { grid-template-columns: minmax(0, 1fr); }
+.ticket-main { min-width: 0; }
+.ticket-top { flex-wrap: wrap; }
+.times { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ticket.side-only .ticket-side { border-left: 0; background: transparent; }
+.monitor { margin: 0; }
+.lower { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; gap: 18px; margin-top: 22px; }
 .card { border-radius: var(--radius); padding: 18px 20px; }
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .card-head h4 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
@@ -186,7 +214,7 @@ button { cursor: pointer; }
 .mon-status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .caret { width: 7px; height: 14px; margin-left: 4px; flex: none; background: var(--accent); animation: monBlink 1s steps(1) infinite; }
 .mon-meta { display: flex; justify-content: space-between; margin: 8px 2px 6px; }
-.scope-head { display: grid; gap: 8px; margin-bottom: 8px; }
+.scope-head { grid-template-columns: minmax(0, 1fr); display: grid; gap: 8px; margin-bottom: 8px; }
 .scope-pair { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
 .scope { width: 100%; height: 230px; display: block; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.35); }
 .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
@@ -227,7 +255,11 @@ button { cursor: pointer; }
     .desk { grid-template-columns: 1fr; }
     /* compact header: brand + sign out on top, three aligned info cells below */
     .rail { position: static; height: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "brand brand out" "user time feed"; align-items: start; gap: 0; padding: 16px 20px 0; border-right: 0; border-bottom: 1px solid var(--line); }
-    .rail .brand { grid-area: brand; align-self: center; }
+    .rail .rail-top { grid-area: brand; align-self: center; }
+    .rail-toggle, .rail-open { display: none !important; }
+    .desk.rail-hidden { grid-template-columns: 1fr; }
+    .desk.rail-hidden .rail { display: grid; }
+    .desk.rail-hidden .stage { padding-left: 16px; margin: 0; }
     .rail-logout { grid-area: out; align-self: center; justify-self: end; padding: 8px 18px; font-size: 14px; }
     .rail-block.grow { display: none; }
     .rail-user, .rail-time, .rail-feed { margin-top: 14px; padding: 14px 14px 16px; border-top: 1px solid var(--line); align-content: start; }
@@ -239,7 +271,6 @@ button { cursor: pointer; }
     .stage { padding: 20px 16px 40px; }
     .ticket { grid-template-columns: 1fr; }
     .ticket-side { border-left: 0; border-top: 1px solid var(--line); }
-    .lower { grid-template-columns: 1fr; }
     .stage-head h2 { font-size: 28px; }
 }
 @media (max-width: 520px) {
@@ -288,6 +319,7 @@ button, a, summary { touch-action: manipulation; }
     .segments i { height: 18px; }
     .empty { padding: 36px 16px 30px; }
     .lower { gap: 14px; margin-top: 16px; }
+    .row1 { gap: 14px; margin-top: 14px; }
     .card { padding: 16px; }
     .card-head { flex-wrap: wrap; }
     .mon-status { min-height: 52px; font-size: 12px; }
@@ -298,3 +330,19 @@ button, a, summary { touch-action: manipulation; }
 @media (max-width: 360px) { .scope { height: 170px; } .rail .brand { font-size: 22px; } .rail-clock { font-size: 24px; } }
 @media (max-height: 480px) and (orientation: landscape) { .scope, .chart-box { height: 150px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media (max-width: 480px) {
+    .times div { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; }
+    .times span { font-size: 11px; }
+    .times b { font-size: 15px; }
+}
+
+/* chart card + monitor (and the rows below) stay side by side down to a half-width window; they stack only on phones */
+@media (max-width: 600px) { .row1, .lower { grid-template-columns: 1fr; } }
+@media (max-width: 960px) {
+    .ticket-main { padding: 20px 18px 14px; }
+    .ticket-top h3 { font-size: 24px; }
+    .chart-foot span:nth-child(2) { display: none; }
+    .times div { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; }
+    .times b { font-size: 15px; }
+    .mon-meta { flex-wrap: wrap; gap: 2px 10px; }
+}

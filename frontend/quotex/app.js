@@ -468,7 +468,7 @@
         const saved = safe(() => localStorage.getItem(`${KEY_USER}_tz_${id.toUpperCase()}`));
         if (saved) state.tz = saved;
         $('loginView').hidden = true; $('deskView').hidden = false;
-        $('who').textContent = id.toUpperCase();
+        showWho();
         $('tzName').textContent = state.tz.split('/').pop().replace(/_/g, ' ');
         syncTime().then(tickClock);
         refreshFeed(); refreshCorrelations(); refreshMonitor(); startMonitor();
@@ -497,11 +497,33 @@
     }
     function armIdle() { clearTimeout(state.idle); state.idle = setTimeout(() => signOut(true), IDLE_MS); }
 
+    // ───────── trader ID mask ─────────
+    // the ID can be hidden (e.g. 23••••89) for screenshots or screen sharing; the choice is remembered on this device
+    const masked = () => safe(() => localStorage.getItem('qx_mask_id'), '0') === '1';
+    function maskId(id) { return id.length <= 4 ? '•'.repeat(id.length) : id.slice(0, 2) + '•'.repeat(Math.min(id.length - 4, 8)) + id.slice(-2); }
+    function showWho() {
+        const id = (state.user || '').toUpperCase(), on = masked();
+        $('who').textContent = on ? maskId(id) : id;
+        $('maskBtn').setAttribute('aria-pressed', String(on));
+        const label = on ? 'Show trader ID' : 'Hide trader ID';
+        $('maskBtn').setAttribute('aria-label', label); $('maskBtn').title = label;
+    }
+
     // ───────── boot ─────────
     function init() {
         $('loginForm').addEventListener('submit', signIn);
         $('scanBtn').addEventListener('click', scan);
         $('logoutBtn').addEventListener('click', () => signOut(false));
+        $('maskBtn').addEventListener('click', () => { safe(() => localStorage.setItem('qx_mask_id', masked() ? '0' : '1')); showWho(); });
+        // side panel: hide / show on wide screens, remembered between visits (phones always show it)
+        const setRail = hidden => {
+            $('deskView').classList.toggle('rail-hidden', hidden);
+            $('railOpen').hidden = !hidden;
+            safe(() => localStorage.setItem('qx_rail_hidden', hidden ? '1' : '0'));
+        };
+        $('railClose').addEventListener('click', () => setRail(true));
+        $('railOpen').addEventListener('click', () => setRail(false));
+        setRail(safe(() => localStorage.getItem('qx_rail_hidden'), '0') === '1');
         $('tzTrigger').addEventListener('click', () => {
             const m = $('tzMenu'); m.hidden = !m.hidden;
             $('tzTrigger').setAttribute('aria-expanded', String(!m.hidden));

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=12">
+    <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
 
@@ -58,11 +58,20 @@
 <!-- ───────────── Desk ───────────── -->
 <div id="deskView" class="desk" hidden>
     <aside class="rail">
-        <div class="brand"><b>AUROX</b><i>AI</i></div>
+        <div class="rail-top">
+            <div class="brand"><b>AUROX</b><i>AI</i></div>
+            <button id="railClose" class="rail-toggle" type="button" aria-label="Hide side panel" title="Hide side panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        </div>
 
         <div class="rail-block rail-user">
             <span class="rail-label">Signed in as</span>
-            <strong id="who" class="rail-value"></strong>
+            <div class="who-row">
+                <strong id="who" class="rail-value"></strong>
+                <button id="maskBtn" class="eye" type="button" aria-label="Hide trader ID" aria-pressed="false" title="Hide trader ID">
+                    <svg class="eye-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10 10 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4M6.5 6.6C3.6 8.5 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>
+                </button>
+            </div>
         </div>
 
         <div class="rail-block rail-time">
@@ -83,6 +92,8 @@
 
         <button id="logoutBtn" class="rail-logout" type="button">Sign out</button>
     </aside>
+
+    <button id="railOpen" class="rail-open" type="button" aria-label="Show side panel" title="Show side panel" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
 
     <main class="stage">
         <header class="stage-head">
@@ -186,6 +197,6 @@
     </main>
 </div>
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

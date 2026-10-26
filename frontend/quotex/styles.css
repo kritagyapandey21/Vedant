@@ -175,8 +175,13 @@ button { cursor: pointer; }
 @keyframes bob { 50% { transform: scaleY(.7); } }
 .empty .muted { margin-top: 6px; }
 
-.monitor { margin: 22px 0; }
-.lower { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 22px; }
+.row1 { margin-top: 18px; display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: stretch; }
+.row1 > * { min-width: 0; }
+.ticket.solo { grid-template-columns: 1fr; }
+.ticket.side-only { grid-template-columns: 1fr; }
+.ticket.side-only .ticket-side { border-left: 0; background: transparent; }
+.monitor { margin: 0; }
+.lower { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; gap: 18px; margin-top: 22px; }
 .card { border-radius: var(--radius); padding: 18px 20px; }
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .card-head h4 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
@@ -191,7 +196,7 @@ button { cursor: pointer; }
 .mon-status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .caret { width: 7px; height: 14px; margin-left: 4px; flex: none; background: var(--accent); animation: monBlink 1s steps(1) infinite; }
 .mon-meta { display: flex; justify-content: space-between; margin: 8px 2px 6px; }
-.scope-head { display: grid; gap: 8px; margin-bottom: 8px; }
+.scope-head { grid-template-columns: minmax(0, 1fr); display: grid; gap: 8px; margin-bottom: 8px; }
 .scope-pair { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
 .scope { width: 100%; height: 230px; display: block; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.35); }
 .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
@@ -244,7 +249,7 @@ button { cursor: pointer; }
     .stage { padding: 20px 16px 40px; }
     .ticket { grid-template-columns: 1fr; }
     .ticket-side { border-left: 0; border-top: 1px solid var(--line); }
-    .lower { grid-template-columns: 1fr; }
+    .lower, .row1 { grid-template-columns: 1fr; }
     .stage-head h2 { font-size: 28px; }
 }
 @media (max-width: 520px) {
@@ -293,6 +298,7 @@ button, a, summary { touch-action: manipulation; }
     .segments i { height: 18px; }
     .empty { padding: 36px 16px 30px; }
     .lower { gap: 14px; margin-top: 16px; }
+    .row1 { gap: 14px; margin-top: 14px; }
     .card { padding: 16px; }
     .card-head { flex-wrap: wrap; }
     .mon-status { min-height: 52px; font-size: 12px; }

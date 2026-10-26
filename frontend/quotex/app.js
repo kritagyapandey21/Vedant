@@ -133,6 +133,7 @@
         const s = state.signal;
         $('empty').hidden = true;
         $('ticket').hidden = false;
+        $('ticketSide').hidden = false;
         const buy = s.direction === 'BUY';
         $('tPair').textContent = s.pair;
         $('tPrice').textContent = Number(s.current_price).toFixed(decimals(s.current_price));
@@ -489,7 +490,7 @@
         safe(() => sessionStorage.removeItem(KEY_TOKEN));
         if (location.pathname.startsWith('/quotex/')) { location.replace('/login/?broker=quotex' + (otherDevice ? '&other_device=1' : expired ? '&expired=1' : '')); return; }
         state.signal = null; state.points = [];
-        $('ticket').hidden = true; $('empty').hidden = false;
+        $('ticket').hidden = true; $('ticketSide').hidden = true; $('empty').hidden = false;
         $('deskView').hidden = true; $('loginView').hidden = false;
         $('loginError').textContent = otherDevice ? 'Signed out: this ID was used to sign in on another device.' : expired ? 'Signed out after 30 minutes of inactivity.' : '';
         $('idInput').value = ''; $('idInput').focus();

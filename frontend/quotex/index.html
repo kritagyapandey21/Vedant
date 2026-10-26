@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=10">
+    <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
 
@@ -98,25 +98,10 @@
 
         <p id="notice" class="notice" role="status">Waiting for the data feed…</p>
 
-        <section class="card monitor">
-            <div class="card-head"><h4>AI market monitor</h4><span class="live-tag"><i></i>LIVE</span></div>
-            <div class="scope-head">
-                <div><b id="monPair" class="scope-pair">—</b><span id="monPrice" class="mono muted small"></span></div>
-                <div class="mon-status mono"><span id="monLine">Starting analysis…</span><b class="caret"></b></div>
-            </div>
-            <canvas id="monCanvas" class="scope" aria-label="Live analysis of the pair being scanned"></canvas>
-            <div class="gauges">
-                <div class="gauge"><span>RSI</span><div class="gbar"><i id="gRsi"></i></div><b id="gRsiN" class="mono">--</b></div>
-                <div class="gauge"><span>%B</span><div class="gbar"><i id="gBb"></i></div><b id="gBbN" class="mono">--</b></div>
-                <div class="gauge"><span>STOCH</span><div class="gbar"><i id="gSr"></i></div><b id="gSrN" class="mono">--</b></div>
-            </div>
-            <div class="mon-meta muted small"><span id="monCount">0 pairs</span><span id="monCycle">cycle 0</span></div>
-            <div id="monQueue" class="queue"></div>
-            <p id="monEmpty" class="muted small">Waiting for enough candles…</p>
-        </section>
 
+        <div class="row1">
         <!-- The ticket -->
-        <section id="ticket" class="ticket" hidden>
+        <section id="ticket" class="ticket solo" hidden>
             <div class="ticket-main">
                 <div class="ticket-top">
                     <div>
@@ -137,6 +122,35 @@
                 <div class="times"><div><span>Entry time</span><b id="tEntry2" class="mono"></b></div><div><span>Exit time</span><b id="tExpiry2" class="mono"></b></div></div>
             </div>
 
+        </section>
+
+        <section id="empty" class="empty">
+            <div class="empty-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <h3>No signal yet</h3>
+            <p class="muted">Press <b>Scan market</b> to rank every watched pair and pick the strongest setup.</p>
+        </section>
+
+        <section class="card monitor">
+            <div class="card-head"><h4>AI market monitor</h4><span class="live-tag"><i></i>LIVE</span></div>
+            <div class="scope-head">
+                <div><b id="monPair" class="scope-pair">—</b><span id="monPrice" class="mono muted small"></span></div>
+                <div class="mon-status mono"><span id="monLine">Starting analysis…</span><b class="caret"></b></div>
+            </div>
+            <canvas id="monCanvas" class="scope" aria-label="Live analysis of the pair being scanned"></canvas>
+            <div class="gauges">
+                <div class="gauge"><span>RSI</span><div class="gbar"><i id="gRsi"></i></div><b id="gRsiN" class="mono">--</b></div>
+                <div class="gauge"><span>%B</span><div class="gbar"><i id="gBb"></i></div><b id="gBbN" class="mono">--</b></div>
+                <div class="gauge"><span>STOCH</span><div class="gbar"><i id="gSr"></i></div><b id="gSrN" class="mono">--</b></div>
+            </div>
+            <div class="mon-meta muted small"><span id="monCount">0 pairs</span><span id="monCycle">cycle 0</span></div>
+            <div id="monQueue" class="queue"></div>
+            <p id="monEmpty" class="muted small">Waiting for enough candles…</p>
+        </section>
+        </div>
+
+
+        <div class="lower">
+        <section id="ticketSide" class="ticket side-only" hidden>
             <div class="ticket-side">
                 <div class="timeline">
                     <div class="tl-row"><span>Generated</span><b id="tGen" class="mono"></b></div>
@@ -162,13 +176,6 @@
             </div>
         </section>
 
-        <section id="empty" class="empty">
-            <div class="empty-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            <h3>No signal yet</h3>
-            <p class="muted">Press <b>Scan market</b> to rank every watched pair and pick the strongest setup.</p>
-        </section>
-
-        <div class="lower">
 
             <section class="card">
                 <div class="card-head"><h4>Moving together</h4><span class="muted small">strongest 1 min return correlations</span></div>
@@ -179,6 +186,6 @@
     </main>
 </div>
 
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

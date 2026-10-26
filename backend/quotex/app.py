@@ -25,12 +25,13 @@ from slowapi.util import get_remote_address
 
 from analysis import IST, SignalAnalyzer
 from config import (
-    ACCESS_IDS, ADMIN_KEY, ALLOWED_ORIGINS, CACHE_STALE_SECONDS, HOST, LOG_FORMAT,
+    ACCESS_IDS, ADMIN_KEY, ALLOWED_ORIGINS, BYPASS_TRADER_ID, CACHE_STALE_SECONDS, HOST, LOG_FORMAT,
     LOG_LEVEL, MIN_CONFIDENCE_THRESHOLD, PORT, QX_IS_DEMO,
 )
 import claude_judge
 import session_auth
 import signal_v3
+import telegram_service
 from quotex_feed import QuotexFeed
 from timezone_utils import is_valid_timezone, timezone_catalog
 from trader_store import get_timezone, set_timezone
@@ -282,7 +283,7 @@ async def get_correlations(_session: Optional[dict] = Depends(require_session)) 
 @app.post("/verify-trader")
 @limiter.limit("10/minute")
 async def verify_trader(request: Request, payload: Dict) -> Dict:
-    """Check the ID against ACCESS_IDS (open when the list is empty) and remember its timezone."""
+    """Check the ID (ACCESS_IDS list if set, then the Quotex partner bot if REQUIRE_VERIFICATION=true) and remember its timezone."""
     trader_id = str(payload.get("trader_id", "")).strip()
     if not trader_id:
         raise HTTPException(status_code=400, detail="trader_id required")
@@ -294,8 +295,15 @@ async def verify_trader(request: Request, payload: Dict) -> Dict:
 
     if ACCESS_IDS and trader_id.casefold() not in ACCESS_IDS:
         return {"found": False, "message": "ACCESS DENIED, ID NOT AUTHORISED"}
-    saved = set_timezone(trader_id, timezone_name or get_timezone(trader_id))
-    return {"found": True, "message": "TRADER VERIFIED", "timezone": saved, "token": session_auth.issue(trader_id, "quotex")}
+    # the Quotex partner bot decides (open when REQUIRE_VERIFICATION is not true)
+    if BYPASS_TRADER_ID and trader_id.casefold() == BYPASS_TRADER_ID.casefold():
+        result = {"found": True, "bypassed": True, "message": "TRADER VERIFIED"}
+    else:
+        result = await telegram_service.verify_trader(trader_id)
+    if result.get("found"):
+        result["timezone"] = set_timezone(trader_id, timezone_name or get_timezone(trader_id))
+        result["token"] = session_auth.issue(trader_id, "quotex")
+    return result
 
 
 @app.get("/timezones")

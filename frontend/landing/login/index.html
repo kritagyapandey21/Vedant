@@ -10,10 +10,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="login.css?v=11">
+    <link rel="stylesheet" href="login.css?v=15">
 </head>
 <body>
-<div class="bg" aria-hidden="true"><div class="bg-grid"></div></div>
+<div class="bg" aria-hidden="true"><div class="bg-glow g1"></div><div class="bg-glow g2"></div><canvas id="bgCanvas"></canvas><div class="bg-grid"></div></div>
 
 <header class="top">
     <a class="logo" href="../" aria-label="Back to TradingSignal">
@@ -24,28 +24,30 @@
 </header>
 
 <main class="stage">
-    <form id="form" class="card" novalidate>
-        <h1><span>AUROX AI</span> terminal</h1>
+    <section id="pick" class="pick" aria-labelledby="pickTitle">
+        <h1 id="pickTitle"><span>AUROX AI</span> terminal</h1>
+        <p class="sub">Choose the broker you trade on to continue.</p>
+        <div class="pick-grid">
+            <button type="button" class="tcard" data-broker="quotex">
+                <span class="b-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8" /></svg></span>
+                <b>Quotex</b>
+                <p>Currency pairs including OTC, scanned live with ticks merged over broker history.</p>
+                <ul><li>Real and OTC pairs, payout 80%+</li><li>1 minute signals with entry time</li><li>Live AI market monitor</li></ul>
+                <span class="go">Open Quotex terminal <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            </button>
+            <button type="button" class="tcard" data-broker="pocket">
+                <span class="b-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9"/><path d="M3 21h18"/></svg></span>
+                <b>Pocket Option</b>
+                <p>Forex pairs analysed from Pocket Option's own candle history.</p>
+                <ul><li>Forex pairs, payout 80%+</li><li>1 minute signals with entry time</li><li>Confidence score on every call</li></ul>
+                <span class="go">Open Pocket Option terminal <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            </button>
+        </div>
+    </section>
 
-        <fieldset class="brokers" aria-label="Broker">
-            <legend>Broker</legend>
-            <label class="broker" data-broker="quotex">
-                <input type="radio" name="broker" value="quotex" checked>
-                <span class="b-body">
-                    <span class="b-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8" /></svg></span>
-                    <span class="b-text"><b>Quotex</b><small>Currency &amp; OTC · live ticks</small></span>
-                    <span class="b-check" aria-hidden="true"></span>
-                </span>
-            </label>
-            <label class="broker" data-broker="pocket">
-                <input type="radio" name="broker" value="pocket">
-                <span class="b-body">
-                    <span class="b-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9"/><path d="M3 21h18"/></svg></span>
-                    <span class="b-text"><b>Pocket Option</b><small>Forex pairs · broker candles</small></span>
-                    <span class="b-check" aria-hidden="true"></span>
-                </span>
-            </label>
-        </fieldset>
+    <form id="form" class="card" novalidate hidden>
+        <button type="button" id="changeBroker" class="change">← Change terminal</button>
+        <h1><span>AUROX AI</span> <span id="brokerTitle" class="bt">Quotex</span> terminal</h1>
 
         <label class="field-label" for="idInput" id="idLabel">Quotex Access ID</label>
         <input id="idInput" type="text" autocomplete="username" spellcheck="false" maxlength="32" placeholder="Enter your ID">
@@ -65,6 +67,7 @@
     </form>
 </main>
 
-<script src="login.js?v=6"></script>
+<script src="bg.js?v=1"></script>
+<script src="login.js?v=7"></script>
 </body>
 </html>

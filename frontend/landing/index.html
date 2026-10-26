@@ -31,7 +31,6 @@
         <a href="#engines">AUROX AI</a>
         <a href="#features">Features</a>
         <a href="#security">Security</a>
-        <a href="#compare">Compare</a>
         <a href="#faq">FAQ</a>
     </nav>
     <a class="btn btn-blue nav-cta" href="login/">Access Terminal</a>
@@ -105,7 +104,7 @@
             <p class="aurox-line">A signal engine that combines three indicators with an AI review, then delivers one call for the next candle.</p>
             <ul class="ticks">
                 <li>Scans every open pair paying <b>80% or more</b>, refreshed every minute</li>
-                <li><b>RSI, EMA and MACD</b> vote on direction and set a confidence score</li>
+                <li><b>Multiple indicators</b> vote on direction and set a confidence score</li>
                 <li><b>Claude reviews the top candidates</b> and can reject a weak setup</li>
                 <li>Entry, expiry and a live countdown in your own time zone</li>
             </ul>
@@ -131,7 +130,7 @@
         <div class="tl-line"><i id="tlFill"></i></div>
         <ol class="steps">
             <li class="reveal"><span class="n">01</span><div><h4>Collect</h4><p>A live feed of one minute candles for every open pair above the payout threshold. On Quotex the newest candles are built from the live tick stream so they are never stale.</p></div></li>
-            <li class="reveal"><span class="n">02</span><div><h4>Measure</h4><p><b>RSI</b> reads momentum, <b>EMA 9 and 21</b> read trend, and <b>MACD</b> checks that momentum is still building. Only closed candles with no gaps are used.</p></div></li>
+            <li class="reveal"><span class="n">02</span><div><h4>Measure</h4><p><b>Multiple indicators</b> read momentum and trend together, and check that the move is still building. Only closed candles with no gaps are used.</p></div></li>
             <li class="reveal"><span class="n">03</span><div><h4>Vote and rank</h4><p>The three indicators vote on direction. A tie means no call. Pairs where they agree are ranked by weighted confidence and the top three go forward.</p></div></li>
             <li class="reveal claude-step"><span class="n">04</span><div><h4>Claude judgement</h4><p>Claude reviews the shortlist, picks the cleanest setup or rejects all of them, and explains its reason in a line. If the review is unavailable, the indicator ranking is used.</p></div></li>
             <li class="reveal"><span class="n">05</span><div><h4>Deliver</h4><p>The chosen pair is shown with entry at the next full minute, expiry one minute later, and a live countdown that follows the server clock.</p></div></li>
@@ -223,28 +222,6 @@
     <p class="sec-foot reveal">Traffic is served over <b>HTTPS</b>. No system is perfectly secure: keep your own devices updated, never share your access ID, and sign out on shared computers.</p>
 </section>
 
-<!-- ───────────── Compare ───────────── -->
-<section class="section" id="compare">
-    <div class="section-head">
-        <p class="eyebrow reveal">SIDE BY SIDE</p>
-        <h2 class="reveal" style="--d:.07s">Pocket Option vs Quotex terminals</h2>
-    </div>
-    <div class="table-wrap reveal">
-        <table class="compare">
-            <thead><tr><th></th><th class="a">AUROX AI · Pocket Option</th><th class="b">AUROX AI · Quotex</th></tr></thead>
-            <tbody>
-                <tr><th>Broker data</th><td data-label="Pocket Option">Pocket Option</td><td data-label="Quotex">Quotex</td></tr>
-                <tr><th>Pairs scanned</th><td data-label="Pocket Option">Forex, payout 80%+</td><td data-label="Quotex">Currency pairs incl. OTC, payout 80%+</td></tr>
-                <tr><th>Latest candles</th><td data-label="Pocket Option">Broker candle history</td><td data-label="Quotex">Live ticks merged over history</td></tr>
-                <tr><th>Indicators</th><td colspan="2" class="span">RSI · EMA 9/21 · MACD, majority vote and weighted confidence</td></tr>
-                <tr><th>Candle size</th><td colspan="2" class="span">1 minute, entry at next full minute</td></tr>
-                <tr><th>Interface</th><td data-label="Pocket Option">Dark neon terminal</td><td data-label="Quotex">Light signal desk with call history</td></tr>
-                <tr><th>Access</th><td data-label="Pocket Option">Verified Trader ID</td><td data-label="Quotex">Access ID</td></tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-
 <!-- ───────────── FAQ ───────────── -->
 <section class="section" id="faq">
     <div class="section-head">
@@ -296,7 +273,7 @@
 <footer class="footer">
     <div class="foot-brand">
         <a class="logo" href="#top"><img src="mark.svg" alt="" width="32" height="32"><span>Trading<b>Signal</b></span></a>
-        <p class="muted">Signal analysis for 1 minute binary charts. Not financial advice.</p>
+        <p class="muted">Signal analysis for 1 minute binary options. Not financial advice.</p>
     </div>
     <div class="foot-links">
         <a href="#engines">AUROX AI</a><a href="#faq">FAQ</a>

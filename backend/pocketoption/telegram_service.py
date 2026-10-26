@@ -21,6 +21,10 @@ API_HASH           = os.environ.get("TELEGRAM_API_HASH", "")
 SESSION_STRING     = os.environ.get("TELEGRAM_SESSION_STRING", "")
 PO_BOT_USERNAME    = "AffiliatePocketBot"
 
+# Needed from the bot's reply: "Sum of deposits" (USD) and "Balance" (as the bot shows it). 0 turns a check off.
+MIN_DEPOSIT = float(os.environ.get("PO_MIN_DEPOSIT", "49") or "0")
+MIN_BALANCE = float(os.environ.get("PO_MIN_BALANCE", "5") or "0")
+
 # When True, login is blocked instead of bypassed if Telegram is not configured.
 _REQUIRE_VERIFICATION = os.environ.get("REQUIRE_VERIFICATION", "false").lower() == "true"
 
@@ -61,7 +65,7 @@ async def _get_client():
 
 
 def _parse_reply(text: str) -> Dict:
-    """Parse PocketPartners bot response. Requires UID present and Sum of deposits > $50."""
+    """Parse PocketPartners bot response. Requires UID present, Sum of deposits >= MIN_DEPOSIT and Balance >= MIN_BALANCE."""
     import re
 
     if not text:
@@ -73,17 +77,27 @@ def _parse_reply(text: str) -> Dict:
     if "uid:" not in text.lower():
         return {"found": False, "message": "UNRECOGNISED RESPONSE"}
 
-    # Enforce minimum $45 in total deposits
-    match = re.search(r'sum of deposits\s*:\s*\$?([\d,]+\.?\d*)', text, re.IGNORECASE)
-    if match:
+    if MIN_DEPOSIT > 0:
+        match = re.search(r'^[ \t]*sum of deposits[ \t]*:[^\d\n-]*([\d,]+\.?\d*)', text, re.IGNORECASE | re.MULTILINE)
+        if not match:
+            return {"found": False, "message": "COULD NOT VERIFY DEPOSIT HISTORY"}
         total_deposits = float(match.group(1).replace(',', ''))
-        if total_deposits < 45:
+        if total_deposits < MIN_DEPOSIT:
             return {
                 "found":   False,
-                "message": f"ACCESS DENIED — MINIMUM $45 DEPOSIT REQUIRED (yours: ${total_deposits:.2f})"
+                "message": f"ACCESS DENIED — MINIMUM ${MIN_DEPOSIT:g} IN DEPOSITS REQUIRED (yours: ${total_deposits:.2f})"
             }
-    else:
-        return {"found": False, "message": "COULD NOT VERIFY DEPOSIT HISTORY"}
+
+    if MIN_BALANCE > 0:
+        match = re.search(r'^[ \t]*balance[ \t]*:[^\d\n-]*([\d,]+\.?\d*)', text, re.IGNORECASE | re.MULTILINE)
+        if not match:
+            return {"found": False, "message": "COULD NOT VERIFY BALANCE"}
+        balance = float(match.group(1).replace(',', ''))
+        if balance < MIN_BALANCE:
+            return {
+                "found":   False,
+                "message": f"ACCESS DENIED — MINIMUM BALANCE OF {MIN_BALANCE:g} REQUIRED (yours: {balance:.2f})"
+            }
 
     return {"found": True, "message": "TRADER VERIFIED"}
 

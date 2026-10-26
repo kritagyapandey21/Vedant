@@ -142,6 +142,8 @@
         $('tGen').textContent = fmtTime(Date.parse(s.generated_timestamp));
         $('tEntry').textContent = fmtTime(Date.parse(s.entry_timestamp));
         $('tExpiry').textContent = fmtTime(Date.parse(s.expiry_timestamp));
+        $('tEntry2').textContent = $('tEntry').textContent;
+        $('tExpiry2').textContent = $('tExpiry').textContent;
         $('tConf').textContent = `${s.confidence.toFixed(1)}%`;
         const seg = $('segments');
         seg.className = `segments ${buy ? 'buy' : 'sell'}`;

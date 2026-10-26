@@ -192,8 +192,10 @@ button { cursor: pointer; }
 
 .row1 { margin-top: 18px; display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: stretch; }
 .row1 > * { min-width: 0; }
-.ticket.solo { grid-template-columns: 1fr; }
-.ticket.side-only { grid-template-columns: 1fr; }
+.ticket.solo, .ticket.side-only { grid-template-columns: minmax(0, 1fr); }
+.ticket-main { min-width: 0; }
+.ticket-top { flex-wrap: wrap; }
+.times { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ticket.side-only .ticket-side { border-left: 0; background: transparent; }
 .monitor { margin: 0; }
 .lower { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; gap: 18px; margin-top: 22px; }
@@ -268,7 +270,6 @@ button { cursor: pointer; }
     .stage { padding: 20px 16px 40px; }
     .ticket { grid-template-columns: 1fr; }
     .ticket-side { border-left: 0; border-top: 1px solid var(--line); }
-    .lower, .row1 { grid-template-columns: 1fr; }
     .stage-head h2 { font-size: 28px; }
 }
 @media (max-width: 520px) {
@@ -332,4 +333,15 @@ button, a, summary { touch-action: manipulation; }
     .times div { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; }
     .times span { font-size: 11px; }
     .times b { font-size: 15px; }
+}
+
+/* chart card + monitor (and the rows below) stay side by side down to a half-width window; they stack only on phones */
+@media (max-width: 600px) { .row1, .lower { grid-template-columns: 1fr; } }
+@media (max-width: 960px) {
+    .ticket-main { padding: 20px 18px 14px; }
+    .ticket-top h3 { font-size: 24px; }
+    .chart-foot span:nth-child(2) { display: none; }
+    .times div { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; }
+    .times b { font-size: 15px; }
+    .mon-meta { flex-wrap: wrap; gap: 2px 10px; }
 }

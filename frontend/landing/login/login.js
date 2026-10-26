@@ -39,14 +39,20 @@
     // ───── broker choice ─────
     function setBroker(key, remember = true) {
         state.broker = BROKERS[key] ? key : 'quotex';
-        document.querySelector(`input[name=broker][value=${state.broker}]`).checked = true;
+        $('brokerTitle').textContent = BROKERS[state.broker].name;
         $('idLabel').textContent = BROKERS[state.broker].label;
         if ($('brokerHint')) $('brokerHint').textContent = BROKERS[state.broker].hint;
         $('signupName').textContent = BROKERS[state.broker].name;
         $('signupLink').href = BROKERS[state.broker].signup;
         if (remember) safe(() => localStorage.setItem('aurox_last_broker', state.broker));
     }
-    document.querySelectorAll('input[name=broker]').forEach(r => r.addEventListener('change', () => setBroker(r.value)));
+    // two screens: the broker cards first, then that broker's sign-in form
+    function showScreen(form) {
+        $('pick').hidden = form; $('form').hidden = !form;
+        if (form) $('idInput').focus();
+    }
+    document.querySelectorAll('.tcard').forEach(c => c.addEventListener('click', () => { setBroker(c.dataset.broker); show(''); showScreen(true); }));
+    $('changeBroker').addEventListener('click', () => { show(''); showScreen(false); });
 
     // ───── time zones ─────
     function renderTz(q = '') {
@@ -120,9 +126,10 @@
 
     // ───── init ─────
     const params = new URLSearchParams(location.search);
-    setBroker(params.get('broker') || 'quotex', false);
+    const asked = params.get('broker');
+    setBroker(asked || 'quotex', false);
+    if (BROKERS[asked]) showScreen(true);      // signed out of a terminal: go straight back to its form
     if (params.get('other_device')) show('You were signed out because this ID was used to sign in on another device.', true);
     else if (params.get('expired')) show('You were signed out after 30 minutes of inactivity.', true);
     loadTimezones();
-    $('idInput').focus();
 })();

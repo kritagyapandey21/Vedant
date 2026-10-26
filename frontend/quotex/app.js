@@ -498,9 +498,9 @@
     function armIdle() { clearTimeout(state.idle); state.idle = setTimeout(() => signOut(true), IDLE_MS); }
 
     // ───────── trader ID mask ─────────
-    // the ID can be hidden (e.g. 23••••89) for screenshots or screen sharing; the choice is remembered on this device
+    // the ID can be hidden completely (••••••••) for screenshots or screen sharing; the choice is remembered on this device
     const masked = () => safe(() => localStorage.getItem('qx_mask_id'), '0') === '1';
-    function maskId(id) { return id.length <= 4 ? '•'.repeat(id.length) : id.slice(0, 2) + '•'.repeat(Math.min(id.length - 4, 8)) + id.slice(-2); }
+    function maskId(id) { return '•'.repeat(id.length); }
     function showWho() {
         const id = (state.user || '').toUpperCase(), on = masked();
         $('who').textContent = on ? maskId(id) : id;

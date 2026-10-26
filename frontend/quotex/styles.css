@@ -81,11 +81,26 @@ button { cursor: pointer; }
 
 /* ───────── Desk ───────── */
 .desk { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; }
+.rail-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rail-toggle, .rail-open { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line-2); background: rgba(255,255,255,.04); color: var(--ink-2); cursor: pointer; padding: 0; transition: border-color .2s, color .2s, background .2s; }
+.rail-toggle:hover, .rail-open:hover { border-color: rgba(255,255,255,.35); color: #fff; background: rgba(255,255,255,.08); }
+.rail-toggle svg, .rail-open svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rail-open { position: fixed; top: 22px; left: 18px; z-index: 20; width: 34px; height: 34px; background: rgba(14,15,19,.85); }
+.desk.rail-hidden { grid-template-columns: 1fr; }
+.desk.rail-hidden .rail { display: none; }
+.desk.rail-hidden .stage { padding-left: 64px; margin: 0 auto; }
 .rail { background: var(--rail); border-right: 1px solid var(--line); color: var(--ink); padding: 24px 20px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 0; height: 100vh; }
 .rail-block { display: grid; gap: 4px; }
 .rail-block.grow { flex: 1; min-height: 0; grid-template-rows: auto 1fr; }
 .rail-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .rail-label em { font-style: normal; color: var(--ink-2); }
+.who-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.eye { display: grid; place-items: center; flex: none; width: 30px; height: 30px; padding: 0; border-radius: 9px; border: 1px solid var(--line-2); background: rgba(255,255,255,.04); color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
+.eye:hover { border-color: rgba(255,255,255,.35); color: #fff; }
+.eye svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.eye .eye-off { display: none; }
+.eye[aria-pressed="true"] .eye-on { display: none; }
+.eye[aria-pressed="true"] .eye-off { display: block; }
 .rail-value { font-size: 16px; word-break: break-all; font-weight: 500; }
 .rail-clock { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: -.02em; }
 .rail-sub { color: var(--muted); font-size: 12px; }
@@ -237,7 +252,11 @@ button { cursor: pointer; }
     .desk { grid-template-columns: 1fr; }
     /* compact header: brand + sign out on top, three aligned info cells below */
     .rail { position: static; height: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "brand brand out" "user time feed"; align-items: start; gap: 0; padding: 16px 20px 0; border-right: 0; border-bottom: 1px solid var(--line); }
-    .rail .brand { grid-area: brand; align-self: center; }
+    .rail .rail-top { grid-area: brand; align-self: center; }
+    .rail-toggle, .rail-open { display: none !important; }
+    .desk.rail-hidden { grid-template-columns: 1fr; }
+    .desk.rail-hidden .rail { display: grid; }
+    .desk.rail-hidden .stage { padding-left: 16px; margin: 0; }
     .rail-logout { grid-area: out; align-self: center; justify-self: end; padding: 8px 18px; font-size: 14px; }
     .rail-block.grow { display: none; }
     .rail-user, .rail-time, .rail-feed { margin-top: 14px; padding: 14px 14px 16px; border-top: 1px solid var(--line); align-content: start; }

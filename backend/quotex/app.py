@@ -6,6 +6,7 @@ Signal generation only: this service never places orders.
 
 import asyncio
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -28,6 +29,7 @@ from config import (
     ACCESS_IDS, ADMIN_KEY, ALLOWED_ORIGINS, BYPASS_TRADER_ID, CACHE_STALE_SECONDS, HOST, LOG_FORMAT,
     LOG_LEVEL, MIN_CONFIDENCE_THRESHOLD, PORT, QX_IS_DEMO,
 )
+import alerts
 import claude_judge
 import session_auth
 import signal_v3
@@ -41,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend" / "quotex"
 MIN_LEAD_SECONDS = 3          # entry must be at least this far in the future
+ALERT_CHECK_SECONDS = 60
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="AUROX AI Quotex", description="1-minute signals from Quotex candles", version="1.0.0")
@@ -134,12 +137,23 @@ def cache_fresh() -> bool:
 async def startup_event():
     logger.info("AUROX AI (Quotex) starting - %s account, data only", "demo" if QX_IS_DEMO else "LIVE")
     asyncio.create_task(feed.run())
+    asyncio.create_task(alert_loop())
+
+
+async def alert_loop() -> None:
+    """Tell the admin when the data stops, and when it comes back."""
+    watch = alerts.DownWatch()
+    while True:
+        await asyncio.sleep(ALERT_CHECK_SECONDS)
+        message = watch.check(cache_fresh(), time.time(), feed.last_error)
+        if message:
+            await alerts.send(message)
 
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
     return HealthResponse(
-        status="healthy",
+        status="healthy" if cache_fresh() else "degraded",
         timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         pairs_monitored=len(feed.candles),
         data_source="Quotex",

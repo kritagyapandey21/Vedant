@@ -45,6 +45,12 @@ QX_REFRESH_SECONDS = int(os.environ.get("QX_REFRESH_SECONDS", "60"))
 QX_CANDLES = 150                                  # 1-minute candles per pair
 CACHE_STALE_SECONDS = int(os.environ.get("CACHE_STALE_SECONDS", "180"))
 
+# Telegram alerts when the data stops (see alerts.py)
+QX_ALERT_BOT_TOKEN = os.environ.get("QX_ALERT_BOT_TOKEN", "").strip()
+QX_ALERT_CHAT_ID = os.environ.get("QX_ALERT_CHAT_ID", "").strip()
+QX_ALERT_AFTER_SECONDS = int(os.environ.get("QX_ALERT_AFTER_SECONDS", "300"))
+QX_ALERT_REPEAT_SECONDS = int(os.environ.get("QX_ALERT_REPEAT_SECONDS", "21600"))
+
 # Where api_quotex keeps sessions/ and its log (it uses paths relative to the CWD)
 QX_DATA_DIR = Path(os.environ.get("QX_DATA_DIR", Path(__file__).with_name("qx_data")))
 # Location of the backend/quotex_lib checkout, used when api_quotex is not pip-installed

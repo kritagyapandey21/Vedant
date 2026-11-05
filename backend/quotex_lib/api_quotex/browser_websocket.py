@@ -1,6 +1,6 @@
 # Vendored from the quotex-api project (QuotexAPI/utils/browser_websocket.py), where it was tested on the VPS.
-# Only four local changes: loguru logger, QUOTEX_PAGE_URL and QUOTEX_BROWSER_DIR from the environment, and the
-# `keep` fix in _drain (see the comment there).
+# Only five local changes: loguru logger, QUOTEX_PAGE_URL and QUOTEX_BROWSER_DIR from the environment, the
+# `keep` fix in _drain (see the comment there), and waiting for the Cloudflare check in _cloudflare_cleared.
 """
 WebSocket transport that runs inside a real Chrome (undetected-chromedriver).
 
@@ -67,6 +67,9 @@ ws.onmessage = (m) => {
 };
 """
 
+CHALLENGE_MARKERS = ("just a moment", "attention required", "access denied", "verify you are human")
+CLOUDFLARE_WAIT = 40  # seconds to let the check finish before calling it a block
+
 _DRAIN_JS = "const q = window.__qx.q; window.__qx.q = []; return [window.__qx.state, window.__qx.err, q];"
 _STATE_JS = "return [window.__qx.state, window.__qx.err];"   # added: state only, leaves buffered frames in place
 
@@ -115,9 +118,8 @@ class BrowserWebSocketTransport:
             self.driver.get(PAGE_URL)
             time.sleep(5)  # let any Cloudflare check run
 
-            source = self.driver.page_source.lower()
-            if any(s in source for s in ("just a moment", "attention required", "access denied")):
-                logger.error("Cloudflare blocked the browser page")
+            if not self._cloudflare_cleared():
+                logger.error(f"Cloudflare blocked the browser page after {CLOUDFLARE_WAIT:g} s (title={self.driver.title!r})")
                 self.close()
                 return False
 
@@ -147,6 +149,19 @@ class BrowserWebSocketTransport:
             print(f"[BROWSER] Error: {e}")
             self.close()
             return False
+
+    def _cloudflare_cleared(self) -> bool:
+        # Local fix: one look after 5 s treated a check that was still running as a block. The login tool waits like this.
+        started = time.time()
+        while True:
+            source = self.driver.page_source.lower()
+            if not any(s in source for s in CHALLENGE_MARKERS):
+                if time.time() - started >= 1:
+                    logger.info(f"Cloudflare check cleared after {time.time() - started:.0f} s more")
+                return True
+            if time.time() - started >= CLOUDFLARE_WAIT:
+                return False
+            time.sleep(1)
 
     def close(self) -> None:
         self.running = False

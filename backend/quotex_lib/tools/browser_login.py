@@ -208,6 +208,9 @@ def login(args) -> Optional[Dict[str, Any]]:
             box = visible_code_input(driver)
             if box is not None and asked < 3:
                 say("Quotex is asking for a code (it was emailed to you). " + page_hint(driver))
+                if args.no_code:
+                    args.code_needed = True
+                    return None
                 code = read_code(args.code_file, deadline)
                 if not code:
                     break
@@ -259,14 +262,15 @@ def main() -> int:
     ap.add_argument("--timeout", type=float, default=600, help="seconds to wait for the login (including the code)")
     ap.add_argument("--code-file", help="file to read the emailed code from when the terminal cannot be typed in "
                                         "(default: pin.txt next to --out, a folder the tool's user owns)")
-    ap.set_defaults(demo=True)
+    ap.add_argument("--no-code", action="store_true", help="unattended run: exit with status 2 if Quotex asks for a code")
+    ap.set_defaults(demo=True, code_needed=False)
     args = ap.parse_args()
 
     if not args.code_file:
         args.code_file = os.path.join(os.path.dirname(os.path.abspath(args.out)), "pin.txt")
     data = login(args)
     if not data:
-        return 1
+        return 2 if args.code_needed else 1
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)

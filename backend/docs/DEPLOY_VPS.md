@@ -224,8 +224,11 @@ Then delete the `signals` A record in the domain account. Nothing else on the se
 
   The tool signs in with `QX_EMAIL` / `QX_PASSWORD` from that `.env`, asks you to type the code Quotex emails, and saves a
   `session.json` (mode 600) with the session and the long-lived account cookies. When Quotex later rejects the session the
-  service renews it through Chrome with those cookies; if that fails the log says to run this tool again. Use a **demo**
-  account.
+  service renews it through Chrome with those cookies. If that fails it runs this tool by itself, at most once an hour and
+  3 times in a row. It stops and needs you to run the tool when Quotex asks for a code or those 3 tries fail. Run it from
+  `/opt/tradingsignal/backend/quotex`, because it writes a log file to the current folder. Use a **demo** account.
+- **Quotex alerts:** set `QX_ALERT_BOT_TOKEN` and `QX_ALERT_CHAT_ID` in `backend/quotex/.env` to get a Telegram message
+  when no fresh data has arrived for 5 minutes, and when it comes back. `/health` reports `degraded` during that time.
 - **Quotex rate limit:** restarting the Quotex service often triggers HTTP 429. Restart it rarely.
 - **Pocket Option:** needs a valid `LO_UID` token; tokens expire and must be replaced.
 - **Memory:** the Quotex service plus headless Chromium needs roughly 600-900 MB at login time. If the VPS is already tight,

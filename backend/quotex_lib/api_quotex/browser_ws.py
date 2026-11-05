@@ -122,33 +122,75 @@ def _new_driver():
     return uc.Chrome(options=options, use_subprocess=True, **kwargs), profile
 
 
+CHALLENGE_MARKERS = ("just a moment", "attention required", "access denied", "verify you are human")
+
+
+def _wait_clear(driver, seconds: float = 40) -> bool:
+    """Wait for Cloudflare's check page to go away (the login tool does the same)."""
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if not any(m in (driver.page_source or "").lower() for m in CHALLENGE_MARKERS):
+            return True
+        time.sleep(1)
+    return False
+
+
+def _page_hint(driver) -> str:
+    try:
+        text = driver.execute_script("return (document.body && document.body.innerText || '').replace(/\\s+/g,' ').slice(0,200)")
+    except Exception:
+        text = ""
+    return f"url={driver.current_url!r} title={driver.title!r} text={text!r}"
+
+
 def _refresh_blocking(cookies: str, is_demo: bool, lang: str) -> Optional[Dict[str, Any]]:
     """Open the trade page logged in with the saved account cookies and read the current session token from it.
 
     Only account cookies are injected (never Cloudflare's: those belong to the browser that earned them). The Chrome is
     closed again right away, so no logged-in page stays open to hold a second socket on the same session.
+    Every way of failing says why in the log, so a refused renewal can be understood.
     """
+    from urllib.parse import urlparse
     from .login import _cookies_string_to_dict, _extract_token_from_trade
 
     jar = {k: v for k, v in _cookies_string_to_dict(cookies).items()
            if not k.lower().startswith(("cf_", "__cf", "_ga", "__vid"))}
     if not jar:
+        logger.warning("Quotex refresh: no account cookies are saved, a new login is needed")
         return None
+    origin = urlparse(bridge.PAGE_URL)
+    base = f"{origin.scheme}://{origin.netloc}"
     driver, profile = _new_driver()
     try:
         driver.set_script_timeout(30)
         driver.get(bridge.PAGE_URL)
-        time.sleep(5)                               # let Cloudflare's check run
-        for name, value in jar.items():
-            driver.execute_cdp_cmd("Network.setCookie", {"name": name, "value": value, "url": "https://quotex.com/",
-                                                         "path": "/", "secure": True})
-        driver.get(f"https://quotex.com/{lang}/{'demo-trade' if is_demo else 'trade'}")
-        time.sleep(6)
-        if "sign-in" in (driver.current_url or ""):
-            logger.warning("Quotex refresh: the saved cookies are no longer logged in")
+        if not _wait_clear(driver):                     # let Cloudflare's check run and finish
+            logger.warning(f"Quotex refresh: Cloudflare check did not clear ({_page_hint(driver)})")
             return None
-        token = _extract_token_from_trade(driver.page_source)
+        for name, value in jar.items():
+            driver.execute_cdp_cmd("Network.setCookie", {"name": name, "value": value, "url": base + "/",
+                                                         "path": "/", "secure": origin.scheme == "https"})
+        driver.get(f"{base}/{lang}/{'demo-trade' if is_demo else 'trade'}")
+        if not _wait_clear(driver):
+            logger.warning(f"Quotex refresh: Cloudflare check did not clear on the trade page ({_page_hint(driver)})")
+            return None
+        token = None
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            if "sign-in" in (driver.current_url or ""):
+                logger.warning("Quotex refresh: the saved cookies are no longer logged in, a new login is needed")
+                return None
+            token = _extract_token_from_trade(driver.page_source)
+            if not token:
+                try:
+                    token = driver.execute_script("return (window.settings && window.settings.token) || null")
+                except Exception:
+                    token = None
+            if token:
+                break
+            time.sleep(1)
         if not token:
+            logger.warning(f"Quotex refresh: logged in but no session token on the page ({_page_hint(driver)})")
             return None
         fresh = {c["name"]: c["value"] for c in driver.get_cookies() if not c["name"].lower().startswith(("cf_", "__cf"))}
         return {"token": token, "cookies": "; ".join(f"{k}={v}" for k, v in fresh.items()),

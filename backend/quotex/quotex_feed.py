@@ -7,11 +7,15 @@ import asyncio
 import json
 import logging
 import os
+import signal
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, List, Optional
 
+import alerts
 from config import (
     QX_CANDLES, QX_DATA_DIR, QX_EMAIL, QX_IS_DEMO, QX_LIB_PATH, QX_MIN_PAYOUT,
     QX_PASSWORD, QX_ASSET_TYPES, QX_REAL_MARKET_ONLY, QX_REFRESH_SECONDS,
@@ -27,6 +31,36 @@ RELOGIN_MIN_INTERVAL = 600    # never run the browser login more than once per 1
 # "browser": the server cannot log in or open the socket with plain Python (Cloudflare answers 403), so the feed
 # uses the saved session.json and a real Chrome for the socket (api_quotex/browser_ws.py). Default "direct" = as before.
 BROWSER_MODE = os.environ.get("QUOTEX_TRANSPORT", "direct").strip().lower() == "browser"
+AUTO_LOGIN_MIN_INTERVAL = 3600   # at most one automatic full login per hour
+AUTO_LOGIN_MAX_FAILURES = 3      # then wait for a login by hand
+LOGIN_TOOL_TIMEOUT = 180
+LOGIN_NEEDS_CODE = 2             # exit status of browser_login.py --no-code
+
+
+def _run_login_tool(session_file) -> tuple:
+    """Run the login tool in its own process, as a person would. Returns (exit code, end of its output)."""
+    cmd = [sys.executable, str(Path(QX_LIB_PATH) / "tools" / "browser_login.py"), "--out", str(session_file),
+           "--no-code", "--timeout", str(LOGIN_TOOL_TIMEOUT)]
+    if not QX_IS_DEMO:
+        cmd.append("--live")
+    # Own process group: if it hangs, its Chrome has to go too. The password comes from the environment, never the command line.
+    proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, errors="replace", start_new_session=True)
+    try:
+        output, _ = proc.communicate(timeout=LOGIN_TOOL_TIMEOUT + 60)
+        code = proc.returncode
+    except subprocess.TimeoutExpired:
+        if hasattr(os, "killpg"):
+            os.killpg(proc.pid, signal.SIGKILL)
+        else:
+            proc.kill()
+        output, _ = proc.communicate()
+        code = -1
+    tail = (output or "").strip()[-500:]
+    for secret in (QX_EMAIL, QX_PASSWORD):
+        if secret:
+            tail = tail.replace(secret, "***")
+    return code, tail
 
 
 def _prepare_environment() -> None:
@@ -94,6 +128,7 @@ class QuotexFeed:
         self.connected = False
         self.last_error = ""
         self._last_login = 0.0
+        self._dead_session_mtime: Optional[float] = None   # session.json that was rejected and could not be renewed
         self._wake: Optional[asyncio.Event] = None
         self._fail_streak = 0
 
@@ -105,10 +140,76 @@ class QuotexFeed:
     def _session_file(self):
         return QX_DATA_DIR / "sessions" / "session.json"
 
+    def _session_mtime(self) -> Optional[float]:
+        try:
+            return self._session_file().stat().st_mtime
+        except OSError:
+            return None
+
+    def _auto_login_state(self) -> dict:
+        """Kept on disk so a service restart cannot get around the limits. A login by hand starts the count again."""
+        try:
+            state = json.loads(self._auto_login_file().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return state if state.get("session_mtime") == self._session_mtime() else {}
+
+    def _auto_login_file(self):
+        return QX_DATA_DIR / "sessions" / "auto_login.json"
+
+    async def _auto_login(self) -> bool:
+        """Full login with QX_EMAIL / QX_PASSWORD, for when the saved cookies can no longer renew the session.
+
+        Each try costs a Chrome and too many can get the account locked, so they are limited. A Quotex code request
+        needs a person, so that stops the tries until someone logs in by hand.
+        """
+        if not (QX_EMAIL and QX_PASSWORD):
+            return False
+        state = self._auto_login_state()
+        failures = state.get("failures", 0)
+        if state.get("needs_code") or failures >= AUTO_LOGIN_MAX_FAILURES:
+            return False
+        if time.time() - state.get("at", 0) < AUTO_LOGIN_MIN_INTERVAL:
+            return False
+
+        def save(**values) -> None:
+            self._auto_login_file().write_text(json.dumps(values), encoding="utf-8")
+
+        started = time.time()
+        save(at=started, failures=failures, session_mtime=self._session_mtime())
+        logger.info("Quotex auto login: starting (attempt %d of %d)", failures + 1, AUTO_LOGIN_MAX_FAILURES)
+        code, output = await asyncio.to_thread(_run_login_tool, self._session_file())
+        logger.info("Quotex auto login: tool exited with %s. %s", code, output)
+        self._last_login = time.time()
+
+        if code == 0:
+            self._dead_session_mtime = None
+            save(at=started, failures=0, session_mtime=self._session_mtime())
+            await alerts.send("logged in again automatically after the session stopped working.")
+            return True
+        if code == LOGIN_NEEDS_CODE:
+            save(at=started, failures=failures, needs_code=True, session_mtime=self._session_mtime())
+            await alerts.send("Quotex is asking for an emailed code, so automatic login cannot finish. Run "
+                              "quotex_lib/tools/browser_login.py on the server.")
+            return False
+        failures += 1
+        save(at=started, failures=failures, session_mtime=self._session_mtime())
+        if failures >= AUTO_LOGIN_MAX_FAILURES:
+            await alerts.send(f"automatic login failed {failures} times and has stopped trying. Run "
+                              "quotex_lib/tools/browser_login.py on the server.")
+        return False
+
     async def _login_from_session(self, force: bool) -> str:
         """Browser mode: use the saved session; on force, renew it through Chrome with the saved cookies."""
         from api_quotex.browser_ws import build_ssid, refresh_session
         path = self._session_file()
+        # A session Quotex rejected that could not be renewed is not tried again, and no Chrome is started for it,
+        # until a new login rewrites session.json (every attempt costs a Chrome, ~1 GB, and used to end in an OOM kill).
+        if self._dead_session_mtime is not None and self._session_mtime() == self._dead_session_mtime:
+            if not await self._auto_login():
+                raise RuntimeError("the saved Quotex session was rejected and could not be renewed - waiting for a new login "
+                                   "(run quotex_lib/tools/browser_login.py on the server)")
+            force = False
         try:
             saved = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -117,14 +218,19 @@ class QuotexFeed:
             self._last_login = time.time()
             fresh = await refresh_session(saved["cookies"], QX_IS_DEMO) if saved.get("cookies") else None
             if not fresh or not fresh.get("token"):
-                raise RuntimeError("Quotex rejected the saved session and it could not be renewed - run "
-                                   "quotex_lib/tools/browser_login.py on the server to log in again")
-            saved.update({k: v for k, v in fresh.items() if v})
-            saved["ssid"] = build_ssid(saved["token"], QX_IS_DEMO)
-            saved["is_demo"] = QX_IS_DEMO
-            path.write_text(json.dumps(saved, indent=4), encoding="utf-8")
-            os.chmod(path, 0o600)
-            logger.info("Quotex session renewed through Chrome")
+                self._dead_session_mtime = self._session_mtime()
+                if not await self._auto_login():
+                    raise RuntimeError("Quotex rejected the saved session and it could not be renewed - run "
+                                       "quotex_lib/tools/browser_login.py on the server to log in again")
+                saved = json.loads(path.read_text(encoding="utf-8"))
+            else:
+                saved.update({k: v for k, v in fresh.items() if v})
+                saved["ssid"] = build_ssid(saved["token"], QX_IS_DEMO)
+                saved["is_demo"] = QX_IS_DEMO
+                path.write_text(json.dumps(saved, indent=4), encoding="utf-8")
+                os.chmod(path, 0o600)
+                self._dead_session_mtime = None
+                logger.info("Quotex session renewed through Chrome")
         if not saved.get("ssid"):
             raise RuntimeError(f"no Quotex session found at {path} - run quotex_lib/tools/browser_login.py on the server")
         return saved["ssid"]

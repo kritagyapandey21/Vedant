@@ -230,7 +230,24 @@ Then delete the `signals` A record in the domain account. Nothing else on the se
 - **Quotex alerts:** set `QX_ALERT_BOT_TOKEN` and `QX_ALERT_CHAT_ID` in `backend/quotex/.env` to get a Telegram message
   when no fresh data has arrived for 5 minutes, and when it comes back. `/health` reports `degraded` during that time.
 - **Quotex rate limit:** restarting the Quotex service often triggers HTTP 429. Restart it rarely.
-- **Pocket Option:** needs a valid `LO_UID` token; tokens expire and must be replaced.
+- **Pocket Option:** needs a valid `LO_UID` token, and Pocket Option ends tokens every few days. Renewing them from saved
+  cookies avoids a manual swap each time. Password login from a server usually gets a captcha, so the cookies are the method:
+  1. In a browser that stays logged in to the data account (with no money in it), use Cookie-Editor: Export, Header String.
+     Never log out of that browser, because that kills the copied cookies.
+  2. On the VPS, save it without echoing it (one line, mode 600):
+     `read -rs C`, paste, then
+     `printf '%s' "$C" > /var/lib/tradingsignal/po_cookies.json && chown tsignal:tsignal /var/lib/tradingsignal/po_cookies.json && chmod 600 /var/lib/tradingsignal/po_cookies.json && unset C`
+  3. Check it: `sudo -u tsignal env QUOTEX_BROWSER_DIR=/opt/tradingsignal/browsers/cft xvfb-run -a /opt/tradingsignal/venv/bin/python po_login.py --renew /var/lib/tradingsignal/po_cookies.json --check`
+     (run from `backend/pocketoption`).
+  4. Install the timer, replacing `PO_PORT` with the Pocket Option port:
+     `sed 's/__PO_PORT__/PO_PORT/' backend/deploy/tradingsignal-po-renew.service > /etc/systemd/system/tradingsignal-po-renew.service`,
+     copy `tradingsignal-po-renew.timer` there too, then `systemctl daemon-reload && systemctl enable --now tradingsignal-po-renew.timer`.
+
+  Every 3 minutes the job checks `/relay-status`. After 5 minutes without data it renews the token into
+  `/var/lib/tradingsignal/po_token.txt`, at most every 15 minutes, and the feed uses it on its next reconnect, without a
+  restart. A token put into `.env` by hand still wins, because the file is only used when it is newer than `.env`. If the
+  cookies are logged out, the job logs `copy fresh cookies` and waits for a new cookie file. Its log:
+  `journalctl -u tradingsignal-po-renew`.
 - **Memory:** the Quotex service plus headless Chromium needs roughly 600-900 MB at login time. If the VPS is already tight,
   watch `free -h` after step 6.
 - **Restarts sign everyone out** unless `SESSION_SECRET` is set (it is, in step 5).

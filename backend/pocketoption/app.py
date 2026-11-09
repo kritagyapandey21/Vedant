@@ -6,6 +6,7 @@ Provides REST API endpoints for signal generation with session management.
 
 import asyncio
 import logging
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -152,6 +153,8 @@ relay_candle_cache: Dict = {}
 relay_latest_prices: Dict = {}   # po_symbol → latest real-time price
 relay_cache_timestamp: Optional[datetime] = None
 RELAY_STALE_SECONDS = 300  # treat cache as stale if not updated in 5 min
+# written by po_renew_job.py when it renews the token from saved cookies
+PO_TOKEN_FILE = Path(os.environ.get("PO_TOKEN_FILE", "/var/lib/tradingsignal/po_token.txt"))
 
 # Only fiat currencies — filters out crypto (BTC, ETH…) and commodities (XAU, XAG…)
 _FOREX_CURRENCIES = {"EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"}
@@ -183,6 +186,16 @@ def _init_pocket_option(token: str):
     current_config["assets"]          = POCKET_OPTION_ASSETS
 
 
+def _renewed_po_token() -> Optional[str]:
+    """The token po_renew_job.py saved, if it is newer than .env (a token put into .env by hand still wins)."""
+    try:
+        if PO_TOKEN_FILE.stat().st_mtime <= Path(__file__).with_name(".env").stat().st_mtime:
+            return None
+        return PO_TOKEN_FILE.read_text(encoding="utf-8").strip() or None
+    except OSError:
+        return None
+
+
 async def _po_data_loop(token: str) -> None:
     """
     Background asyncio task: connects to PO via BinaryOptionsToolsV2,
@@ -206,6 +219,10 @@ async def _po_data_loop(token: str) -> None:
     config = Config(connection_initialization_timeout_secs=20)
 
     while True:
+        renewed = _renewed_po_token()
+        if renewed and renewed != token:
+            token = renewed
+            logger.info(f"PO data loop: using the renewed token from {PO_TOKEN_FILE}")
         try:
             async with PocketOptionAsync(token, config=config) as api:
                 logger.info("PO data loop: connected via BinaryOptionsToolsV2")

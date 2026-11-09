@@ -1,0 +1,25 @@
+[Unit]
+Description=TradingSignal: renew the Pocket Option token from saved cookies when the feed has no data
+After=network.target tradingsignal-pocketoption.service
+
+[Service]
+Type=oneshot
+User=tsignal
+Group=tsignal
+WorkingDirectory=/opt/tradingsignal/backend/pocketoption
+Environment=QUOTEX_BROWSER_DIR=/opt/tradingsignal/browsers/cft
+Environment=PO_STATUS_URL=http://127.0.0.1:__PO_PORT__/relay-status
+# Chrome needs a screen; xvfb-run gives it a virtual one (same as the Quotex service)
+ExecStart=/usr/bin/xvfb-run -a --server-args="-screen 0 1280x800x24 -nolisten tcp" /opt/tradingsignal/venv/bin/python po_renew_job.py
+# 3 = the saved cookies are logged out; not a crash, the log says what to do
+SuccessExitStatus=3
+TimeoutStartSec=300
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/tradingsignal/backend/pocketoption /var/lib/tradingsignal
+MemoryMax=1200M
+CPUQuota=60%
+TasksMax=500
